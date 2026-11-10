@@ -51,3 +51,44 @@ jobs:
 
       - name: Compilar y correr las pruebas
         run: ./mvnw -B verify
+
+  frontend:
+    name: Front-end (instalar y compilar)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v5
+
+      # Mientras no exista frontend/ (lo crea Carlos), el job pasa sin hacer nada
+      - name: Revisar si existe el front-end
+        id: front
+        working-directory: .
+        run: |
+          if [ -f frontend/package-lock.json ]; then
+            echo "existe=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "existe=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Aún no hay frontend/package-lock.json; se omite el build del front-end."
+          fi
+
+      - name: Instalar Node.js 24
+        if: steps.front.outputs.existe == 'true'
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias
+        if: steps.front.outputs.existe == 'true'
+        run: npm ci
+
+      - name: Compilar
+        if: steps.front.outputs.existe == 'true'
+        run: npm run build
