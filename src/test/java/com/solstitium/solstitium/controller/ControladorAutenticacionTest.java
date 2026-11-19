@@ -21,7 +21,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class AuthControllerTest {
+class ControladorAutenticacionTest {
 
     private static final String USUARIO = "admin_auth_test";
     private static final String CONTRASENA = "ClaveTemporal-123";
@@ -52,7 +52,7 @@ class AuthControllerTest {
 
     @Test
     void administradorPuedeIniciarSesionConsultarSesionYSalir() throws Exception {
-        MvcResult login = mockMvc.perform(post("/api/auth/login")
+        MvcResult login = mockMvc.perform(post("/api/autenticacion/iniciar-sesion")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -64,20 +64,20 @@ class AuthControllerTest {
 
         MockHttpSession sesion = (MockHttpSession) login.getRequest().getSession(false);
 
-        mockMvc.perform(get("/api/auth/sesion").session(sesion))
+        mockMvc.perform(get("/api/autenticacion/sesion").session(sesion))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.usuario").value(USUARIO));
 
-        mockMvc.perform(post("/api/auth/logout").session(sesion).with(csrf()))
+        mockMvc.perform(post("/api/autenticacion/cerrar-sesion").session(sesion).with(csrf()))
                 .andExpect(status().isNoContent());
 
-        mockMvc.perform(get("/api/auth/sesion").session(sesion))
+        mockMvc.perform(get("/api/autenticacion/sesion").session(sesion))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void credencialesIncorrectasNoInicianSesion() throws Exception {
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/autenticacion/iniciar-sesion")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -97,7 +97,7 @@ class AuthControllerTest {
     void administradorInactivoNoPuedeIniciarSesion() throws Exception {
         jdbcTemplate.update("update administrador set activo = false where usuario = ?", USUARIO);
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/autenticacion/iniciar-sesion")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
