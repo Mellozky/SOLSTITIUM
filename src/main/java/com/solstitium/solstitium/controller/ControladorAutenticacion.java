@@ -25,7 +25,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("/api/auth")
-public class AuthController {
+public class ControladorAutenticacion {
 
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
@@ -33,7 +33,7 @@ public class AuthController {
     private final CsrfTokenRepository csrfTokenRepository;
     private final SecurityContextLogoutHandler logoutHandler = new SecurityContextLogoutHandler();
 
-    public AuthController(AuthenticationManager authenticationManager,
+    public ControladorAutenticacion(AuthenticationManager authenticationManager,
                           SecurityContextRepository securityContextRepository,
                           SessionAuthenticationStrategy sessionAuthenticationStrategy,
                           CsrfTokenRepository csrfTokenRepository) {
@@ -45,12 +45,12 @@ public class AuthController {
 
     /** Entrega un token CSRF para las peticiones de escritura de la SPA. */
     @GetMapping("/csrf")
-    public CsrfResponse csrf(CsrfToken csrfToken) {
-        return new CsrfResponse(csrfToken.getToken());
+    public RespuestaTokenCsrf csrf(CsrfToken csrfToken) {
+        return new RespuestaTokenCsrf(csrfToken.getToken());
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody SolicitudLogin solicitud,
+    public ResponseEntity<?> iniciarSesion(@Valid @RequestBody SolicitudLogin solicitud,
                                    HttpServletRequest request,
                                    HttpServletResponse response) {
         try {
@@ -72,25 +72,25 @@ public class AuthController {
         } catch (AuthenticationException exception) {
             SecurityContextHolder.clearContext();
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ErrorAuthResponse("Credenciales incorrectas o cuenta inactiva."));
+                    .body(new RespuestaErrorAutenticacion("Credenciales incorrectas o cuenta inactiva."));
         }
     }
 
     @GetMapping("/sesion")
-    public SesionAdministradorResponse sesion(Authentication autenticacion) {
+    public SesionAdministradorResponse consultarSesion(Authentication autenticacion) {
         return new SesionAdministradorResponse(autenticacion.getName());
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(Authentication autenticacion,
+    public ResponseEntity<Void> cerrarSesion(Authentication autenticacion,
                                        HttpServletRequest request,
                                        HttpServletResponse response) {
-        logoutHandler.logout(request, response, autenticacion);
+        logoutHandler.cerrarSesion(request, response, autenticacion);
         SecurityContextHolder.clearContext();
         return ResponseEntity.noContent().build();
     }
 
-    public record CsrfResponse(String token) {}
+    public record RespuestaTokenCsrf(String token) {}
 
-    public record ErrorAuthResponse(String mensaje) {}
+    public record RespuestaErrorAutenticacion(String mensaje) {}
 }

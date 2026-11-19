@@ -32,30 +32,30 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
-public class SecurityConfig {
+public class ConfiguracionSeguridad {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http,
+    SecurityFilterChain cadenaSeguridad(HttpSecurity http,
                                              SecurityContextRepository contextRepository,
-                                             CsrfTokenRepository csrfTokenRepository) throws Exception {
+                                             CsrfTokenRepository repositorioTokenCsrf) throws Exception {
         CsrfTokenRequestAttributeHandler csrfHandler = new CsrfTokenRequestAttributeHandler();
         csrfHandler.setCsrfRequestAttributeName(null);
 
         http
                 .cors(cors -> {})
                 .csrf(csrf -> csrf
-                        .csrfTokenRepository(csrfTokenRepository)
+                        .repositorioTokenCsrf(repositorioTokenCsrf)
                         .csrfTokenRequestHandler(csrfHandler))
-                .securityContext(context -> context.securityContextRepository(contextRepository))
+                .securityContext(context -> context.repositorioContextoSeguridad(contextRepository))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/auth/csrf").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/auth/sesion").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/autenticacion/csrf").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/autenticacion/iniciar-sesion").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/autenticacion/sesion").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/autenticacion/cerrar-sesion").authenticated()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().permitAll());
 
@@ -63,7 +63,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    UserDetailsService administradorDetailsService(JdbcTemplate jdbcTemplate) {
+    UserDetailsService servicioUsuariosAdministradores(JdbcTemplate jdbcTemplate) {
         return usuario -> jdbcTemplate.query(
                         "select usuario, contrasena_hash, activo from administrador where usuario = ?",
                         resultSet -> {
@@ -80,42 +80,42 @@ public class SecurityConfig {
     }
 
     @Bean
-    AuthenticationProvider authenticationProvider(UserDetailsService detailsService, PasswordEncoder passwordEncoder) {
+    AuthenticationProvider proveedorAutenticacion(UserDetailsService detailsService, PasswordEncoder codificadorContrasenas) {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider(detailsService);
-        provider.setPasswordEncoder(passwordEncoder);
+        provider.setPasswordEncoder(codificadorContrasenas);
         return provider;
     }
 
     @Bean
-    AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+    AuthenticationManager gestorAutenticacion(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
     }
 
     @Bean
-    PasswordEncoder passwordEncoder() {
+    PasswordEncoder codificadorContrasenas() {
         return new BCryptPasswordEncoder();
     }
 
     @Bean
-    SecurityContextRepository securityContextRepository() {
+    SecurityContextRepository repositorioContextoSeguridad() {
         return new HttpSessionSecurityContextRepository();
     }
 
     @Bean
-    SessionAuthenticationStrategy sessionAuthenticationStrategy() {
+    SessionAuthenticationStrategy estrategiaAutenticacionSesion() {
         return new ChangeSessionIdAuthenticationStrategy();
     }
 
     @Bean
-    CsrfTokenRepository csrfTokenRepository() {
+    CsrfTokenRepository repositorioTokenCsrf() {
         return new HttpSessionCsrfTokenRepository();
     }
 
     @Bean
-    CorsConfigurationSource corsConfigurationSource(
-            @Value("${app.frontend.origin:http://localhost:5173}") String frontendOrigin) {
+    CorsConfigurationSource origenConfiguracionCors(
+            @Value("${app.frontend.origin:http://localhost:5173}") String origenInterfaz) {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(frontendOrigin));
+        configuration.setAllowedOrigins(List.of(origenInterfaz));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Content-Type", "X-CSRF-TOKEN"));
         configuration.setAllowCredentials(true);
