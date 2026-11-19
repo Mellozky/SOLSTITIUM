@@ -5,8 +5,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
  * Acceso a los parámetros de referencia del simulador.
- * La carga de todos los parámetros en un solo objeto (obtenerParametros) y el guardado
- * de cambios (guardarTodo) se agregan con las funcionalidades que los usan.
+ * La carga del conjunto completo se delega al fragmento {@link CargaParametros}.
+ * El guardado de cambios (guardarTodo) se agregará con la administración de parámetros.
  */
-public interface ParametroRepository extends JpaRepository<Parametro, String> {
+public interface ParametroRepository extends JpaRepository<Parametro, String>, CargaParametros {
 }
