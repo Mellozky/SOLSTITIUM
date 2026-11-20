@@ -36,21 +36,21 @@ public class ConfiguracionSeguridad {
 
     @Bean
     SecurityFilterChain cadenaSeguridad(HttpSecurity http,
-                                             SecurityContextRepository contextRepository,
-                                             CsrfTokenRepository repositorioTokenCsrf) throws Exception {
-        CsrfTokenRequestAttributeHandler csrfHandler = new CsrfTokenRequestAttributeHandler();
-        csrfHandler.setCsrfRequestAttributeName(null);
+                                      SecurityContextRepository repositorioContexto,
+                                      CsrfTokenRepository repositorioTokenCsrf) throws Exception {
+        CsrfTokenRequestAttributeHandler manejadorCsrf = new CsrfTokenRequestAttributeHandler();
+        manejadorCsrf.setCsrfRequestAttributeName(null);
 
         http
                 .cors(cors -> {})
                 .csrf(csrf -> csrf
-                        .repositorioTokenCsrf(repositorioTokenCsrf)
-                        .csrfTokenRequestHandler(csrfHandler))
-                .securityContext(context -> context.repositorioContextoSeguridad(contextRepository))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-                .exceptionHandling(exceptions -> exceptions
+                        .csrfTokenRepository(repositorioTokenCsrf)
+                        .csrfTokenRequestHandler(manejadorCsrf))
+                .securityContext(contexto -> contexto.securityContextRepository(repositorioContexto))
+                .sessionManagement(sesion -> sesion.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                .exceptionHandling(excepciones -> excepciones
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
-                .authorizeHttpRequests(authorize -> authorize
+                .authorizeHttpRequests(autorizacion -> autorizacion
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/autenticacion/csrf").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/autenticacion/iniciar-sesion").permitAll()
@@ -63,32 +63,32 @@ public class ConfiguracionSeguridad {
     }
 
     @Bean
-    UserDetailsService servicioUsuariosAdministradores(JdbcTemplate jdbcTemplate) {
-        return usuario -> jdbcTemplate.query(
+    UserDetailsService servicioUsuariosAdministradores(JdbcTemplate consultas) {
+        return usuario -> consultas.query(
                         "select usuario, contrasena_hash, activo from administrador where usuario = ?",
-                        resultSet -> {
-                            if (!resultSet.next()) {
+                        resultado -> {
+                            if (!resultado.next()) {
                                 throw new UsernameNotFoundException("Credenciales incorrectas");
                             }
-                            return User.withUsername(resultSet.getString("usuario"))
-                                    .password(resultSet.getString("contrasena_hash"))
+                            return User.withUsername(resultado.getString("usuario"))
+                                    .password(resultado.getString("contrasena_hash"))
                                     .roles("ADMIN")
-                                    .disabled(!resultSet.getBoolean("activo"))
+                                    .disabled(!resultado.getBoolean("activo"))
                                     .build();
                         },
                         usuario);
     }
 
     @Bean
-    AuthenticationProvider proveedorAutenticacion(UserDetailsService detailsService, PasswordEncoder codificadorContrasenas) {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(detailsService);
-        provider.setPasswordEncoder(codificadorContrasenas);
-        return provider;
+    AuthenticationProvider proveedorAutenticacion(UserDetailsService servicioUsuarios, PasswordEncoder codificadorContrasenas) {
+        DaoAuthenticationProvider proveedor = new DaoAuthenticationProvider(servicioUsuarios);
+        proveedor.setPasswordEncoder(codificadorContrasenas);
+        return proveedor;
     }
 
     @Bean
-    AuthenticationManager gestorAutenticacion(AuthenticationConfiguration configuration) throws Exception {
-        return configuration.getAuthenticationManager();
+    AuthenticationManager gestorAutenticacion(AuthenticationConfiguration configuracion) throws Exception {
+        return configuracion.getAuthenticationManager();
     }
 
     @Bean
@@ -114,14 +114,14 @@ public class ConfiguracionSeguridad {
     @Bean
     CorsConfigurationSource origenConfiguracionCors(
             @Value("${app.frontend.origin:http://localhost:5173}") String origenInterfaz) {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(origenInterfaz));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Content-Type", "X-CSRF-TOKEN"));
-        configuration.setAllowCredentials(true);
+        CorsConfiguration configuracion = new CorsConfiguration();
+        configuracion.setAllowedOrigins(List.of(origenInterfaz));
+        configuracion.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuracion.setAllowedHeaders(List.of("Content-Type", "X-CSRF-TOKEN"));
+        configuracion.setAllowCredentials(true);
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
+        UrlBasedCorsConfigurationSource origen = new UrlBasedCorsConfigurationSource();
+        origen.registerCorsConfiguration("/**", configuracion);
+        return origen;
     }
 }
