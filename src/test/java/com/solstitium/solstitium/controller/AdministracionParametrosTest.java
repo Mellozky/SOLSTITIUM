@@ -110,7 +110,8 @@ class AdministracionParametrosTest {
 
     @Test
     void permiteElLimiteTecnicoDeVidaConIncrementoCompatible() throws Exception {
-        actualizar(lote(cambio("parametro", "vida_util", "valor", "999999999")), 200, 1);
+        actualizar(lote(cambio("parametro", "vida_util", "valor", "999999999"),
+                cambio("parametro", "incremento_anual_tarifa", "valor", "0")), 200, 2);
         assertThat(consultas.queryForObject("select valor from parametro where clave='vida_util'", BigDecimal.class))
                 .isEqualByComparingTo("999999999");
     }
@@ -388,4 +389,13 @@ class AdministracionParametrosTest {
         return "{\"tabla\":\"" + tabla + "\",\"registroId\":\"" + id + "\",\"campo\":\"" + campo + "\",\"valorNuevo\":" + valor + "}";
     }
     static String lote(String... cambios) { return "{\"cambios\":[" + String.join(",", cambios) + "]}"; }
+    @Test
+    void rechazaHorizonteExtremoSinGuardarYPermiteSimularDespues() throws Exception {
+        var anteriores = consultas.queryForList("select * from parametro order by clave");
+        actualizar(lote(cambio("parametro", "vida_util", "valor", "999999999"),
+                cambio("parametro", "incremento_anual_tarifa", "valor", "9000")), 400, null);
+        assertThat(consultas.queryForList("select * from parametro order by clave")).isEqualTo(anteriores);
+        assertThat(cantidadBitacora()).isZero();
+        assertThat(simulaciones.simular(SolicitudesPrueba.crear(1, "150", "40", 1, 1, 1)).getResultados()).isNotEmpty();
+    }
 }

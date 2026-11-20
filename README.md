@@ -113,7 +113,7 @@ $env:DB_URL = 'jdbc:postgresql://localhost:5432/solstitium_pruebas'
 ./mvnw.cmd verify
 ```
 
-Hay 333 pruebas de arranque, persistencia, configuración, autenticación, validación, cálculo, administración, servicio y API. Las pruebas JPA y MVC usan rollback; las transaccionales administrativas sin transacción envolvente restauran los datos y las de autenticación eliminan su usuario de prueba. Flyway deja instaladas las migraciones y sus datos iniciales. Las pruebas de V2 esperan los valores fijos del ERS; no usar una base operativa personalizada.
+Hay 337 pruebas de arranque, persistencia, configuración, autenticación, validación, cálculo, administración, servicio y API. Las pruebas JPA y MVC usan rollback; las transaccionales administrativas sin transacción envolvente restauran los datos y las de autenticación eliminan su usuario de prueba. Flyway deja instaladas las migraciones y sus datos iniciales. Las pruebas de V2 esperan los valores fijos del ERS; no usar una base operativa personalizada.
 
 La instalación limpia y la actualización de V1.1 a V2 se verificaron previamente. La regresión actual comprueba los quince resultados de CP-01–CP-11 y los fallos HTTP sin información interna. Ver `docs/informe-pruebas-motor-simulacion.md` para tolerancias, el orden de los meses en CP-10 y lo pendiente. Esto no acredita aceptación del sistema completo desde navegador ni en producción.
 
@@ -137,7 +137,8 @@ los límites de la base y la capacidad técnica compartida con el motor financie
 
 - `main` es la rama principal: siempre compila, pasa las pruebas y es lo que se despliega.
 - Cada tarea va en una rama corta desde `main`: `feature/…`, `fix/…`, `test/…`, `docs/…`, `chore/…`.
-- Al terminar: actualizar `main`, unir la rama, correr `./mvnw verify`, hacer push y avisar en el grupo. No se usan Pull Requests.
+- Al terminar: actualizar la rama con `main`, ejecutar `./mvnw verify` contra una base exclusiva de pruebas, publicar la rama y abrir un Pull Request. Si el cambio incluye interfaz, ejecutar también sus comprobaciones y compilación. Verificar CI sobre el cambio final.
+- Todos los PR, incluidos los de compañeros y agentes, quedan pendientes de la aprobación de Daniel; solo él los aprueba e integra a `main`. No subir cambios directamente a `main`. Este acuerdo requiere protección de rama en GitHub para imponerse automáticamente; su configuración no se da por hecha.
 - Commits con *Conventional Commits* en español: `feat(calculo): calcular factor de sombra (RF-03)`.
 - Nunca `push --force` sobre `main`.
 - Código propio, comentarios, mensajes y documentación en español, conservando los nombres del ERS y los identificadores obligatorios de las herramientas.

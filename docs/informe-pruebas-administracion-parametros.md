@@ -100,3 +100,9 @@ verificaron pantallas, aceptación desde navegador ni producción. La ejecución
 acredita PostgreSQL 18 de pruebas, no el estado ni los datos de la base existente del
 usuario. Los límites amplios de V2 siguen siendo técnicos/matemáticos: no equivalen
 a rangos operativos de ingeniería aprobados.
+
+## Revisión del horizonte financiero — 20 de noviembre de 2026
+
+Ejecutado `mvnw.cmd -o -B verify` con Java 21 y PostgreSQL 18 en la base exclusiva `solstitium_pruebas_v2`: 337 pruebas, cero fallos, errores u omitidas.
+
+La combinación vida 999999999 e incremento 9000 ahora devuelve 400 sin modificar parámetros ni bitácora, y la simulación posterior conserva su funcionamiento. También se prueba el rechazo con incremento 5, el máximo de años con incremento cero y la frontera de 100 dígitos del crecimiento compuesto. Este presupuesto técnico evita expansiones desmesuradas; los rangos operativos siguen en la base. Las restas del acumulado y ROI usan DECIMAL128. La regresión CP-01–CP-11 conserva sus tolerancias.

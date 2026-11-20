@@ -2,7 +2,10 @@
 
 ## Referencias y prioridades
 
-- ERS general: `D:/Firefox/Proyecto_DSS_Energia_Solar_Monteria_v1.4.pdf` (66 páginas; ruta proporcionada por el usuario). Consultar el original ante dudas; no asumir que está dentro del repositorio.
+- ERS general: `Proyecto_DSS_Energia_Solar_Monteria_v1.4.pdf` (66 páginas). Es la misma especificación para todo el equipo; su ubicación es local y no forma parte del repositorio.
+  - Ubicación verificada en el equipo de Daniel: `C:/Users/maria/Downloads/Proyecto_DSS_Energia_Solar_Monteria_v1.4.pdf`.
+  - Otra ubicación registrada por un integrante: `D:/Firefox/Proyecto_DSS_Energia_Solar_Monteria_v1.4.pdf`; no asumir que existe en otros equipos ni sustituir con ella la referencia común.
+  - Cada integrante debe localizar su copia del mismo archivo y consultar el original ante dudas. Si no está disponible, solicitar su ubicación antes de asumir requisitos.
 - Requisitos: secciones 7 y 8. Modelo relacional: figura 3, página 42; capas: figura 4, página 44; entidades y DTO: figura 5, página 45. Pruebas: capítulo 10, páginas 57–64.
 - Plan y reparto por funcionalidad: `docs/Plan_de_trabajo_SOLSTITIUM.pdf`. Estado documentado al 10 de noviembre: `docs/Documentacion_avance_SOLSTITIUM.docx`.
 - Instrucción del usuario del 13 de noviembre de 2026: descartar las fechas anteriores de los sprints; el equipo trabaja según su disponibilidad. Entrega final: **22 de noviembre de 2026**, zona America/Bogota.
@@ -42,7 +45,9 @@
 ## Git y verificación
 
 - Cuatro integrantes: Daniel Mendoza, Luis Hernández, Carlos Sandoval, Esteban Vidal.
-- Sin Pull Requests por decisión del equipo. Ramas cortas por tarea, actualizar `main`, integrar, verificar y subir conforme a la autorización vigente del usuario. No forzar ni borrar `main`.
+- Desde el 20 de noviembre de 2026, todos los cambios, incluidos los de compañeros y agentes, se presentan mediante Pull Request desde una rama corta basada en `main` actualizada. Ejecutar las pruebas antes de publicar y revisar el resultado de CI sobre el cambio final.
+- La aprobación de todos los PR y su integración a `main` corresponden exclusivamente a Daniel, por instrucción explícita. Los compañeros y agentes pueden preparar, probar, publicar y revisar sus ramas conforme a la autorización vigente, pero no aprobar en su nombre, integrar por su cuenta ni subir directamente a `main`. No forzar ni borrar `main`.
+- Esta pauta documenta el acuerdo del equipo; no acredita que la protección de `main` esté configurada en GitHub.
 - Usar Conventional Commits en español y no atribuir un commit a alguien distinto de su autor real.
 - Revisar rama y cambios pendientes antes de editar. La documentación y entidades pueden estar en ramas pendientes de integrar; no confundir su ausencia en otra rama con pérdida de archivos.
 - Verificación: `./mvnw verify` (Windows: `./mvnw.cmd verify`) contra una base de prueba. Los tests JPA deben revertir sus datos.

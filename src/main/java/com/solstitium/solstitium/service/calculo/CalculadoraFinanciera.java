@@ -55,7 +55,7 @@ public class CalculadoraFinanciera {
         BigDecimal tasa = incremento.movePointLeft(2);
         BigDecimal anual = ahorro.multiply(new BigDecimal("12"));
         BigDecimal total = acumulado(anual, tasa, vida);
-        resultado.setRoi(total.subtract(inversion).divide(inversion, PRECISION).movePointRight(2));
+        resultado.setRoi(total.subtract(inversion, PRECISION).divide(inversion, PRECISION).movePointRight(2));
         BigDecimal recuperacion = null;
         if (total.compareTo(inversion) >= 0) {
             int inferior = 1;
@@ -85,7 +85,7 @@ public class CalculadoraFinanciera {
         if (tasa.signum() == 0) {
             return anual.multiply(BigDecimal.valueOf(anios));
         }
-        return BigDecimal.ONE.add(tasa).pow(anios, PRECISION).subtract(BigDecimal.ONE)
+        return BigDecimal.ONE.add(tasa).pow(anios, PRECISION).subtract(BigDecimal.ONE, PRECISION)
                 .divide(tasa, PRECISION).multiply(anual, PRECISION);
     }
 

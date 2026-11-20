@@ -6,6 +6,8 @@ import java.math.MathContext;
 /** Capacidad de representación compartida por administración y motor; no fija rangos de ingeniería. */
 public final class LimitesCalculoFinanciero {
     private static final int MAXIMO_EXPONENTE = 999999999;
+    // Presupuesto técnico de magnitud para mantener acotados cálculo y respuesta JSON.
+    private static final int MAXIMOS_DIGITOS_CRECIMIENTO = 100;
 
     private LimitesCalculoFinanciero() {}
 
@@ -27,7 +29,11 @@ public final class LimitesCalculoFinanciero {
         BigDecimal tasa = incrementoAnual.movePointLeft(2);
         try {
             if (tasa.signum() != 0) {
-                BigDecimal.ONE.add(tasa).pow(anios, MathContext.DECIMAL128);
+                BigDecimal crecimiento = BigDecimal.ONE.add(tasa).pow(anios, MathContext.DECIMAL128);
+                long digitosEnteros = (long) crecimiento.precision() - crecimiento.scale();
+                if (digitosEnteros > MAXIMOS_DIGITOS_CRECIMIENTO) {
+                    throw new IllegalArgumentException("La vida útil y el incremento anual combinados superan el límite técnico de 100 dígitos de crecimiento acumulado.");
+                }
             }
         } catch (ArithmeticException excepcion) {
             throw new IllegalArgumentException("La vida útil y el incremento anual combinados exceden la capacidad de cálculo.", excepcion);

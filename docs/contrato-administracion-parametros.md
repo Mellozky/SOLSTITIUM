@@ -117,3 +117,5 @@ y sin detalles internos. Los errores previos del filtro de seguridad conservan s
 Fechas LocalDateTime, sin offset, según el modelo existente. Se usa la zona del proceso
 y la misma política JDBC del resto de la aplicación; cada entorno debe mantener coherencia
 con timestamptz. No se modifica la política temporal global desde este módulo.
+
+El crecimiento compuesto `(1 + incremento / 100)^vida` admite como máximo 100 dígitos enteros, un presupuesto técnico de magnitud para acotar cálculo y respuesta JSON, no un rango de ingeniería. La administración rechaza combinaciones superiores antes de modificar datos o bitácora. El motor aplica la misma validación y usa DECIMAL128 también en las restas del acumulado y ROI. Con incremento cero sigue admitiéndose el máximo técnico de años, sujeto a los límites de la base.
