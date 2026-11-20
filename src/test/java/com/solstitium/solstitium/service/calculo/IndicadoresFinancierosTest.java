@@ -1,6 +1,7 @@
 package com.solstitium.solstitium.service.calculo;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.within;
 
 import com.solstitium.solstitium.apoyo.SolicitudesPrueba;
@@ -91,5 +92,19 @@ class IndicadoresFinancierosTest {
         resultado.setCostoTotal(costo);
         resultado.setAhorroMensual(ahorro);
         return resultado;
+    }
+
+    @Test
+    void centralIncoherenteNoRecuperaSombraSilenciosamente() {
+        consultas.update("update configuracion set coeficiente_recuperacion=0.36 where codigo='central'");
+        gestorEntidades.clear();
+        var parametros = repositorio.obtenerParametros();
+        var solicitud = SolicitudesPrueba.crear(1, "100", "40", 4, 4, 4);
+        var factor = sombra.calcularFactor(solicitud.getRespuestasSombra(), parametros);
+        var central = parametros.getConfiguraciones().stream().filter(c -> c.getCodigo().equals("central")).findFirst().orElseThrow();
+        var resultado = tecnica.dimensionar(solicitud, factor, central, parametros);
+        assertThatThrownBy(() -> financiera.calcularIndicadores(resultado, solicitud, parametros, factor))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("central").hasMessageContaining("cero");
+        assertThat(resultado.getAhorroMensual()).isNull();
     }
 }

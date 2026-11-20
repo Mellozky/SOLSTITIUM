@@ -7,6 +7,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.math.BigDecimal;
+import com.solstitium.solstitium.apoyo.SolicitudesPrueba;
+import com.solstitium.solstitium.service.SimulacionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -31,6 +33,7 @@ class AdministracionParametrosTest {
     @Autowired private MockMvc cliente;
     @Autowired private JdbcTemplate consultas;
     @Autowired private PasswordEncoder codificador;
+    @Autowired private SimulacionService simulaciones;
 
     @BeforeEach
     void preparar() {
@@ -46,6 +49,105 @@ class AdministracionParametrosTest {
                 .andExpect(jsonPath("$.registros").isNotEmpty()).andExpect(jsonPath("$.limites").isNotEmpty())
                 .andExpect(jsonPath("$.registros[0].tabla").isString())
                 .andExpect(jsonPath("$.registros[0].valores").isMap());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"tarifas,costo_unitario_kwh", "tarifas,consumo_subsistencia", "tarifas,incremento_anual_tarifa",
+            "tecnicos,tope_sobredimensionamiento", "rangos,consumo_maximo", "rangos,umbral_advertencia_consumo",
+            "rangos,area_minima", "rangos,area_maxima", "rangos,umbral_diferencia_factura"})
+    void consultaParametroYLimiteEnLaSeccionDelErs(String seccion, String clave) throws Exception {
+        cliente.perform(get("/api/admin/parametros").param("seccion", seccion).with(user(USUARIO).roles("ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.registros[?(@.registroId == '" + clave + "')]").isNotEmpty())
+                .andExpect(jsonPath("$.limites[?(@.clave == '" + clave + "')]").isNotEmpty());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"tarifas,consumo_maximo", "tarifas,umbral_advertencia_consumo", "tarifas,umbral_diferencia_factura",
+            "tecnicos,area_minima", "tecnicos,area_maxima", "sombreado,tope_sobredimensionamiento"})
+    void noReparteLimitesDeEntradaEnSeccionesAjenas(String seccion, String clave) throws Exception {
+        cliente.perform(get("/api/admin/parametros").param("seccion", seccion).with(user(USUARIO).roles("ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.registros[?(@.registroId == '" + clave + "')]").isEmpty())
+                .andExpect(jsonPath("$.limites[?(@.clave == '" + clave + "')]").isEmpty());
+    }
+
+    @Test
+    void rechazaRecuperacionCentralSinGuardarElLoteYConservaCp08() throws Exception {
+        var parametrosAntes = consultas.queryForList("select * from parametro order by clave");
+        actualizar(lote(cambio("parametro", "costo_unitario_kwh", "valor", "1100"),
+                cambio("configuracion", "1", "coeficiente_recuperacion", "0.36")), 400, null);
+        assertThat(consultas.queryForList("select * from parametro order by clave")).isEqualTo(parametrosAntes);
+        assertThat(consultas.queryForObject("select coeficiente_recuperacion from configuracion where codigo='central'", BigDecimal.class))
+                .isEqualByComparingTo("0");
+        assertThat(cantidadBitacora()).isZero();
+        var resultado = simulaciones.simular(SolicitudesPrueba.crear(1, "100", "40", 4, 4, 4));
+        assertThat(resultado.getResultados().stream().filter(r -> r.getConfiguracion().equals("central")).findFirst().orElseThrow().getAhorroMensual())
+                .isEqualByComparingTo("0");
+        assertThat(resultado.getResultados().stream().filter(r -> r.getConfiguracion().equals("mlpe")).findFirst().orElseThrow().getAhorroMensual())
+                .isEqualByComparingTo("32076");
+        assertThat(resultado.getRecomendada()).isEqualTo("mlpe");
+    }
+
+    @Test
+    void configuracionCentralIncoherenteImpideGuardarOtrosParametros() throws Exception {
+        consultas.update("update configuracion set coeficiente_recuperacion=0.36 where codigo='central'");
+        actualizar(lote(cambio("parametro", "hsp", "valor", "5")), 400, null);
+        assertThat(consultas.queryForObject("select valor from parametro where clave='hsp'", BigDecimal.class)).isEqualByComparingTo("4.5");
+        assertThat(cantidadBitacora()).isZero();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"1000000000", "2147483647", "2147483648"})
+    void rechazaVidaFueraDelMotorSinGuardarNiAuditar(String vida) throws Exception {
+        var parametrosAntes = consultas.queryForList("select * from parametro order by clave");
+        actualizar(lote(cambio("parametro", "costo_unitario_kwh", "valor", "1100"),
+                cambio("parametro", "vida_util", "valor", vida)), 400, null);
+        assertThat(consultas.queryForList("select * from parametro order by clave")).isEqualTo(parametrosAntes);
+        assertThat(cantidadBitacora()).isZero();
+        assertThat(simulaciones.simular(SolicitudesPrueba.crear(1, "150", "40", 1, 1, 1)).getResultados()).isNotEmpty();
+    }
+
+    @Test
+    void permiteElLimiteTecnicoDeVidaConIncrementoCompatible() throws Exception {
+        actualizar(lote(cambio("parametro", "vida_util", "valor", "999999999")), 200, 1);
+        assertThat(consultas.queryForObject("select valor from parametro where clave='vida_util'", BigDecimal.class))
+                .isEqualByComparingTo("999999999");
+    }
+
+    @Test
+    void limiteTecnicoNoSustituyeElLimiteDeVidaDeLaBase() throws Exception {
+        consultas.update("update limite_parametro set valor_maximo=30 where clave='vida_util'");
+        actualizar(lote(cambio("parametro", "vida_util", "valor", "31")), 400, null);
+        assertThat(consultas.queryForObject("select valor from parametro where clave='vida_util'", BigDecimal.class))
+                .isEqualByComparingTo("25");
+        assertThat(cantidadBitacora()).isZero();
+    }
+
+    @Test
+    void rechazaUnHorizonteCuyaCombinacionDesbordaElCalculo() throws Exception {
+        actualizar(lote(cambio("parametro", "vida_util", "valor", "999999999"),
+                cambio("parametro", "incremento_anual_tarifa", "valor", "9999999999")), 400, null);
+        assertThat(cantidadBitacora()).isZero();
+    }
+
+    @Test
+    void incrementoAnualDeCincoASeisQuedaEnBitacoraCv27() throws Exception {
+        actualizar(lote(cambio("parametro", "incremento_anual_tarifa", "valor", "6")), 200, 1);
+        cliente.perform(get("/api/admin/bitacora").with(user(USUARIO).roles("ADMIN")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].registroId").value("incremento_anual_tarifa"))
+                .andExpect(jsonPath("$[0].valorAnterior").value("5"))
+                .andExpect(jsonPath("$[0].valorNuevo").value("6"))
+                .andExpect(jsonPath("$[0].administrador").value(USUARIO))
+                .andExpect(jsonPath("$[0].fecha").isNotEmpty());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"parametro,costo_unitario_kwh,valor,3001", "franja_horaria,3,peso,0.10",
+            "tramo_sombreado,3,factor_maximo,0.92", "tramo_sombreado,2,configuraciones,[2]"})
+    void reproduceRechazosExactosCv20ACv23(String tabla, String id, String campo, String valor) throws Exception {
+        actualizar(lote(cambio(tabla, id, campo, valor)), 400, null);
+        assertThat(cantidadBitacora()).isZero();
     }
 
     @Test

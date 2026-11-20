@@ -45,19 +45,12 @@ public class CalculadoraFinanciera {
             throw new IllegalArgumentException("Debe calcular una inversión positiva y un ahorro no negativo.");
         }
         BigDecimal vidaConfigurada = parametroPositivo(conjunto, "vida_util");
+        BigDecimal incremento = conjunto.getParametros().get("incremento_anual_tarifa");
         int vida;
         try {
-            vida = vidaConfigurada.intValueExact();
-        } catch (ArithmeticException excepcion) {
-            throw new IllegalStateException("La vida útil debe expresarse como un número entero de años.", excepcion);
-        }
-        // Límite de representación de BigDecimal.pow, no un rango de ingeniería.
-        if (vida > 999999999) {
-            throw new IllegalStateException("La vida útil excede la capacidad de cálculo.");
-        }
-        BigDecimal incremento = conjunto.getParametros().get("incremento_anual_tarifa");
-        if (incremento == null || incremento.signum() < 0) {
-            throw new IllegalStateException("El incremento anual debe existir y no ser negativo.");
+            vida = LimitesCalculoFinanciero.validarHorizonte(vidaConfigurada, incremento);
+        } catch (IllegalArgumentException excepcion) {
+            throw new IllegalStateException(excepcion.getMessage(), excepcion);
         }
         BigDecimal tasa = incremento.movePointLeft(2);
         BigDecimal anual = ahorro.multiply(new BigDecimal("12"));
@@ -135,6 +128,9 @@ public class CalculadoraFinanciera {
         BigDecimal recuperacion = configuracion.getCoeficienteRecuperacion();
         if (recuperacion == null || recuperacion.signum() < 0 || recuperacion.compareTo(BigDecimal.ONE) > 0) {
             throw new IllegalStateException("El coeficiente de recuperación debe estar entre cero y uno.");
+        }
+        if (configuracion.getCodigo().equals("central") && recuperacion.signum() != 0) {
+            throw new IllegalStateException("La configuración central debe conservar coeficiente de recuperación cero.");
         }
         var sombra = sombraPrecalculada != null ? sombraPrecalculada
                 : calculadoraSombra.calcularFactor(solicitud.getRespuestasSombra(), conjunto);

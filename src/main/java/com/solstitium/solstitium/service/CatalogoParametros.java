@@ -17,12 +17,12 @@ import java.util.function.Consumer;
 final class CatalogoParametros {
     static final Map<String, String> SECCIONES = Map.ofEntries(
             Map.entry("costo_unitario_kwh", "tarifas"), Map.entry("consumo_subsistencia", "tarifas"),
-            Map.entry("incremento_anual_tarifa", "tarifas"), Map.entry("consumo_maximo", "tarifas"),
-            Map.entry("umbral_advertencia_consumo", "tarifas"), Map.entry("umbral_diferencia_factura", "tarifas"),
+            Map.entry("incremento_anual_tarifa", "tarifas"), Map.entry("consumo_maximo", "rangos"),
+            Map.entry("umbral_advertencia_consumo", "rangos"), Map.entry("umbral_diferencia_factura", "rangos"),
             Map.entry("hsp", "tecnicos"), Map.entry("factor_rendimiento", "tecnicos"),
             Map.entry("factor_aprovechamiento", "tecnicos"), Map.entry("relacion_cc_ca", "tecnicos"),
-            Map.entry("vida_util", "tecnicos"), Map.entry("area_minima", "tecnicos"), Map.entry("area_maxima", "tecnicos"),
-            Map.entry("tope_sobredimensionamiento", "sombreado"), Map.entry("amplificacion_serie", "sombreado"));
+            Map.entry("vida_util", "tecnicos"), Map.entry("area_minima", "rangos"), Map.entry("area_maxima", "rangos"),
+            Map.entry("tope_sobredimensionamiento", "tecnicos"), Map.entry("amplificacion_serie", "sombreado"));
 
     final List<Registro> registros = new ArrayList<>();
 
@@ -58,7 +58,11 @@ final class CatalogoParametros {
             r.valores.put("codigo", c.getCodigo());
             r.valores.put("nombre", c.getNombre());
             r.numero("costo_kwp", c.getCostoKwp(), 12, 2, c::setCostoKwp);
-            r.numero("coeficiente_recuperacion", c.getCoeficienteRecuperacion(), 4, 3, c::setCoeficienteRecuperacion);
+            if (c.getCodigo().equals("mlpe")) {
+                r.numero("coeficiente_recuperacion", c.getCoeficienteRecuperacion(), 4, 3, c::setCoeficienteRecuperacion);
+            } else {
+                r.valores.put("coeficiente_recuperacion", c.getCoeficienteRecuperacion());
+            }
         });
         datos.tramos().forEach(t -> {
             var r = registro("tramo_sombreado", "" + t.getId(), "sombreado");

@@ -2,6 +2,7 @@ package com.solstitium.solstitium.service;
 
 import com.solstitium.solstitium.model.dto.CambioParametro;
 import com.solstitium.solstitium.repository.AdministracionParametrosRepository.Datos;
+import com.solstitium.solstitium.service.calculo.LimitesCalculoFinanciero;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalTime;
@@ -50,10 +51,6 @@ public class ValidadorParametros {
                 }
                 if (registro.tabla.equals("parametro") && registro.id.equals("vida_util")) {
                     exigir(numero.stripTrailingZeros().scale() <= 0, "La vida útil debe ser un número entero.");
-                    try { numero.intValueExact(); }
-                    catch (ArithmeticException excepcion) {
-                        throw new IllegalArgumentException("La vida útil excede el entero admitido por el motor financiero.");
-                    }
                 }
             }
         }
@@ -92,6 +89,13 @@ public class ValidadorParametros {
                 && datos.paneles().stream().anyMatch(p -> p.isEsReferencia() && p.isActivo()),
                 "Debe existir exactamente un panel de referencia activo.");
         for (String clave : CatalogoParametros.SECCIONES.keySet()) catalogo.buscar("parametro", clave);
+        LimitesCalculoFinanciero.validarHorizonte(parametro(catalogo, "vida_util"), parametro(catalogo, "incremento_anual_tarifa"));
+        for (var configuracion : catalogo.tabla("configuracion")) {
+            if (configuracion.valores.get("codigo").equals("central")) {
+                exigir(configuracion.numero("coeficiente_recuperacion").signum() == 0,
+                        "La configuración central debe conservar coeficiente de recuperación cero; solo MLPE recupera pérdidas por sombra.");
+            }
+        }
         var franjas = catalogo.tabla("franja_horaria");
         BigDecimal pesos = franjas.stream().map(r -> r.numero("peso")).reduce(BigDecimal.ZERO, BigDecimal::add);
         exigir(pesos.compareTo(BigDecimal.ONE) == 0, "Los pesos de las franjas deben sumar exactamente 1.");
