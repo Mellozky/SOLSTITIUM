@@ -2,6 +2,7 @@ package com.solstitium.solstitium.config;
 
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -37,13 +38,16 @@ public class ConfiguracionSeguridad {
     @Bean
     SecurityFilterChain cadenaSeguridad(HttpSecurity http,
                                       SecurityContextRepository repositorioContexto,
-                                      CsrfTokenRepository repositorioTokenCsrf) throws Exception {
+                                      CsrfTokenRepository repositorioTokenCsrf,
+                                      @Qualifier("origenConfiguracionCors") CorsConfigurationSource origenCors) throws Exception {
         CsrfTokenRequestAttributeHandler manejadorCsrf = new CsrfTokenRequestAttributeHandler();
         manejadorCsrf.setCsrfRequestAttributeName(null);
 
         http
-                .cors(cors -> {})
+                .cors(cors -> cors.configurationSource(origenCors))
                 .csrf(csrf -> csrf
+                        // Cálculo público sin persistencia ni acciones sobre una sesión autenticada.
+                        .ignoringRequestMatchers("/api/simulaciones")
                         .csrfTokenRepository(repositorioTokenCsrf)
                         .csrfTokenRequestHandler(manejadorCsrf))
                 .securityContext(contexto -> contexto.securityContextRepository(repositorioContexto))
@@ -52,6 +56,7 @@ public class ConfiguracionSeguridad {
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .authorizeHttpRequests(autorizacion -> autorizacion
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/simulaciones").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/autenticacion/csrf").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/autenticacion/iniciar-sesion").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/autenticacion/sesion").authenticated()

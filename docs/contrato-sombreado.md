@@ -24,4 +24,4 @@ Los extremos y asociaciones salen de las tablas: no se clasifican por nombres ni
 
 Se rechazan respuestas nulas, ausentes, duplicadas o con identificadores desconocidos. La calculadora también detecta pesos que no suman uno, valores fuera de dominio, amplificación inválida, ausencia o ambigüedad del tramo y un tramo elegido sin configuraciones. Estos controles no sustituyen al futuro validador administrativo de toda la configuración.
 
-La sombra total produce factor cero sin divisiones; el posterior dimensionamiento deberá usar su margen máximo en ese caso. Todavía no se calcula la recuperación MLPE ni se ejecuta una simulación completa: son pasos posteriores.
+La sombra total produce factor cero sin divisiones; el dimensionamiento usa su margen máximo en ese caso. La recuperación MLPE se aplica después en `CalculadoraFinanciera`, sin alterar el factor original ni los paneles dimensionados. El servicio coordina estos pasos y la API se describe en `contrato-simulacion.md`.

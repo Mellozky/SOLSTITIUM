@@ -1,6 +1,6 @@
 # Entrada de datos de simulación
 
-Contrato preparado para el futuro servicio y controlador; todavía no existe un endpoint de simulación.
+Contrato de entrada de `POST /api/simulaciones`; la respuesta se documenta en `contrato-simulacion.md`.
 Los DTO siguen la figura 5 del ERS y no se guardan en tablas.
 
 ```json
@@ -23,13 +23,13 @@ Los DTO siguen la figura 5 del ERS y no se guardan en tablas.
 - `areaLibre`: área libre del techo en m², obligatoria y dentro de los extremos inclusivos configurados.
 - `respuestasSombra`: exactamente una respuesta por franja del catálogo. No se admiten franjas duplicadas, ausentes o inexistentes ni porciones desconocidas. El residente elige opciones: no envía coeficientes técnicos. Los identificadores del ejemplo corresponden a V2, no son constantes del validador.
 
-`ValidadorSolicitudSimulacion.validar(solicitud, conjunto)` verifica primero las anotaciones Jakarta Validation y después los límites e identificadores del `ConjuntoParametros` cargado por `ParametroRepository`. Devuelve advertencias no bloqueantes o lanza `DatosSimulacionInvalidosException` con una lista de errores en español. La futura API deberá traducir esta excepción a HTTP 400 mediante su manejador de errores.
+`ValidadorSolicitudSimulacion.validar(solicitud, conjunto)` verifica primero las anotaciones Jakarta Validation y después los límites e identificadores del `ConjuntoParametros` cargado por `ParametroRepository`. Devuelve advertencias no bloqueantes o lanza `DatosSimulacionInvalidosException` con una lista de errores en español. La API traduce esta excepción a HTTP 400 mediante su manejador de errores.
 
 Con V2: 800 kWh no advierte, 801 y 2000 sí; 2001 se rechaza. Área 5 y 500 m² se acepta; 4,99 y 500,01 se rechazan. Estos límites salen de `parametro`, no de las anotaciones.
 
 `SolicitudSimulacion.consumoPromedio()` usa `BigDecimal` y `MathContext.DECIMAL128` para la división. Se llama después de validar; no redondea los consumos a enteros ni calcula la tarifa.
 
-Se incorpora un validador de entrada separado del futuro `ValidadorParametros` del ERS, que validará cambios administrativos. No se añade todavía controlador, cálculo de sombra, dimensionamiento ni indicadores financieros.
+El validador de entrada está separado del futuro `ValidadorParametros` del ERS, que validará cambios administrativos. El servicio coordina sombra, dimensionamiento e indicadores financieros; cada componente tiene su contrato en esta carpeta.
 
 ## Tarifa por estrato
 
