@@ -3,6 +3,7 @@ package com.solstitium.solstitium.service;
 import com.solstitium.solstitium.exception.DatosSimulacionInvalidosException;
 import com.solstitium.solstitium.model.dto.ConjuntoParametros;
 import com.solstitium.solstitium.model.dto.SolicitudSimulacion;
+import com.solstitium.solstitium.service.calculo.CalculadoraTarifa;
 import jakarta.validation.Validator;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Component;
 public class ValidadorSolicitudSimulacion {
 
     private final Validator validador;
+    private final CalculadoraTarifa calculadoraTarifa;
 
     /**
      * El futuro SimulacionService cargará el conjunto una vez y lo compartirá con las calculadoras.
@@ -44,6 +46,7 @@ public class ValidadorSolicitudSimulacion {
         }
         validarSombra(solicitud, conjunto, errores);
         rechazarSiHayErrores(errores);
+        calculadoraTarifa.obtenerAdvertenciaFactura(solicitud, conjunto).ifPresent(advertencias::add);
         return List.copyOf(advertencias);
     }
 
