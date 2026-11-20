@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 public interface PanelRepository extends JpaRepository<Panel, Long> {
 
     /** Todos los paneles del catálogo, activos e inactivos, ordenados por marca y modelo. */
-    @Query("select p from Panel p order by p.marca, p.modelo")
+    @Query("select p from Panel p order by p.marca, p.modelo, p.id")
     List<Panel> buscarTodos();
 
     /** El panel de referencia. La base garantiza que hay como máximo uno. */
