@@ -6,11 +6,36 @@ administrativas ni CRUD de paneles. Contrato: `contrato-administracion-parametro
 
 ## Ejecución local
 
-`./mvnw.cmd verify`, con JDK 21.0.10 y PostgreSQL 17.11, contra una base exclusiva
-`solstitium_pruebas_administracion`, instalada con Flyway V1, V1.1 y V2.
-Resultado: **293 pruebas, cero fallos, cero errores y cero omitidas; BUILD SUCCESS**.
-De ellas, 74 corresponden a esta funcionalidad: 71 de MVC/integración y tres de
-transacción/concurrencia. Las otras 219 conservan la regresión del motor y la API pública.
+`./mvnw.cmd -B -ntp verify`, con JDK 21.0.10 y PostgreSQL 18.7, contra una base exclusiva
+`solstitium_pruebas_correcciones`, instalada con Flyway V1, V1.1 y V2.
+Resultado: **333 pruebas, cero fallos, cero errores y cero omitidas; BUILD SUCCESS**.
+De ellas, 102 corresponden a administración: 99 de MVC/integración y tres de
+transacción/concurrencia. Las otras 231 incluyen el motor, sus límites técnicos y la API pública.
+
+Antes de corregir el código se ejecutaron 21 regresiones seleccionadas: 17 fallaron
+por los dos defectos o por la distribución de secciones, y cuatro ya pasaban. La
+ejecución previa de 293 pruebas no detectaba los cambios inválidos de central ni
+el horizonte aceptado por administración y rechazado por el motor.
+
+## Correcciones verificadas
+
+- El coeficiente solo es editable para MLPE. Cambiar central a 0,36 devuelve 400 y
+  revierte todo el lote propuesto, incluso otros valores válidos. CP-08 conserva
+  ahorro central cero, ahorro MLPE 32.076 COP y recomendación MLPE.
+- La coherencia global exige coeficiente central cero incluso cuando el lote modifica
+  otro parámetro. El motor también rechaza datos central incoherentes sin calcular ahorro.
+- Administración y motor comparten LimitesCalculoFinanciero: vida útil entera positiva,
+  máximo técnico 999999999 y potencia representable para el incremento anual propuesto.
+  Los valores 1000000000, 2147483647 y 2147483648 se rechazan sin cambios ni bitácora;
+  después del rechazo, una simulación con los valores anteriores sigue funcionando.
+- Se prueba el máximo técnico y la combinación extrema que desborda la potencia.
+  Esta comprobación evita expandir un resultado intermedio gigantesco. El máximo
+  técnico no sustituye los límites operativos de limite_parametro ni recomienda
+  una vida útil de esa magnitud; también se comprueba que prevalezca un límite de BD menor.
+- Las consultas y sus límites se distribuyen según CU-08–CU-12. CU-12 incluye consumo,
+  área y diferencia de factura; CU-09 incluye el tope de sobredimensionamiento.
+- CI se alinea con PostgreSQL 18 y JDK 21. La base existente del usuario no se utilizó
+  para estas pruebas ni se modificaron migraciones publicadas.
 
 ## Evidencia funcional
 
@@ -30,6 +55,19 @@ transacción/concurrencia. Las otras 219 conservan la regresión del motor y la 
 - Un valor numéricamente igual no genera registro ni actualiza la fecha. Un lote mixto
   solo audita los valores distintos; los parámetros generales modificados cambian su fecha.
 - Bitácora con valor anterior/nuevo y autor de sesión; orden fecha DESC e id DESC.
+
+## Correspondencia exacta con el ERS original
+
+Se contrastó la tabla 37 (página 62 del PDF facilitado por el usuario):
+
+| Caso | Entrada o acción verificada |
+|---|---|
+| CV-20 | Costo unitario 3001: rechazo sin auditoría |
+| CV-21 | Pesos 0,15 / 0,70 / 0,10: rechazo |
+| CV-22 | Máximo del tramo moderado 0,92: rechazo del cruce con leve |
+| CV-23 | Quitar central del tramo leve dejando MLPE: rechazo |
+| CV-27 | Incremento anual de 5 a 6: bitácora con fecha, usuario, anterior y nuevo |
+| CV-28 | Error real al insertar la segunda auditoría: rollback completo |
 
 ## Rollback real
 
@@ -56,9 +94,9 @@ operativa: esta suite y la regresión del ERS esperan los datos originales de V2
 
 ## Límites de la evidencia
 
-El ERS original no estaba disponible en la ruta de AGENTS.md ni se proporcionó otra.
-Los criterios administrativos solicitados están verificados, pero la correspondencia
-exacta de cada fila CV-21–CV-23, CV-27 y CV-28 requiere contrastar ese PDF; no se declara
-certificación documental de esos identificadores. No se verificaron pantallas,
-aceptación desde navegador ni producción. Los límites amplios de V2 siguen siendo
-técnicos/matemáticos: no equivalen a rangos operativos de ingeniería aprobados.
+El ERS original está disponible en la ruta proporcionada por el usuario, actualizada
+en AGENTS.md. Los casos anteriores se verifican a nivel de API/integración; no se
+verificaron pantallas, aceptación desde navegador ni producción. La ejecución local
+acredita PostgreSQL 18 de pruebas, no el estado ni los datos de la base existente del
+usuario. Los límites amplios de V2 siguen siendo técnicos/matemáticos: no equivalen
+a rangos operativos de ingeniería aprobados.

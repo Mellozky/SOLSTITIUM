@@ -14,7 +14,7 @@ Equipo: Daniel Mendoza · Luis Hernández · Carlos Sandoval · Esteban Vidal
 
 ## Estado al 20 de noviembre de 2026
 
-Están implementados persistencia, autenticación administrativa, entrada y validación, tarifa, sombra, dimensionamiento, generación, ahorro, recuperación, ROI, recomendación y escenario sin sombra. La API pública `POST /api/simulaciones` permite calcular sin registro. La administración permite consultar y actualizar parámetros existentes y consultar su bitácora con sesión y CSRF. La suite incluye 293 pruebas y una regresión de los once escenarios del ERS. Faltan la interfaz web, el CRUD administrativo de paneles, el despliegue y la aceptación final.
+Están implementados persistencia, autenticación administrativa, entrada y validación, tarifa, sombra, dimensionamiento, generación, ahorro, recuperación, ROI, recomendación y escenario sin sombra. La API pública `POST /api/simulaciones` permite calcular sin registro. La administración permite consultar y actualizar parámetros existentes y consultar su bitácora con sesión y CSRF. La suite incluye 333 pruebas y una regresión de los once escenarios del ERS. Faltan la interfaz web, el CRUD administrativo de paneles, el despliegue y la aceptación final.
 
 El árbol siguiente muestra las capas implementadas; la interfaz web sigue pendiente.
 
@@ -42,7 +42,7 @@ src/main/resources/db/migration/   V1__esquema.sql, V1_1__restricciones.sql, V2_
 
 ## Cómo correrlo
 
-Requisitos: JDK 21 y PostgreSQL 15 o superior (por `NULLS NOT DISTINCT`). El CI usa PostgreSQL 17; la verificación local se realizó con PostgreSQL 18.
+Entorno del proyecto: JDK 21 y PostgreSQL 18 sobre una base existente. El CI usa PostgreSQL 18; la verificación local se realizó con PostgreSQL 18.7 en una base exclusiva de pruebas.
 
 Crear la base `solstitium` desde pgAdmin o `createdb`. Flyway crea las tablas, pero no crea la base. En IntelliJ, definir `DB_URL`, `DB_USERNAME` y `DB_PASSWORD` en la configuración de ejecución. El archivo `.env` no se carga automáticamente.
 
@@ -113,7 +113,7 @@ $env:DB_URL = 'jdbc:postgresql://localhost:5432/solstitium_pruebas'
 ./mvnw.cmd verify
 ```
 
-Hay 293 pruebas de arranque, persistencia, configuración, autenticación, validación, cálculo, administración, servicio y API. Las pruebas JPA y MVC usan rollback; las transaccionales administrativas sin transacción envolvente restauran los datos y las de autenticación eliminan su usuario de prueba. Flyway deja instaladas las migraciones y sus datos iniciales. Las pruebas de V2 esperan los valores fijos del ERS; no usar una base operativa personalizada.
+Hay 333 pruebas de arranque, persistencia, configuración, autenticación, validación, cálculo, administración, servicio y API. Las pruebas JPA y MVC usan rollback; las transaccionales administrativas sin transacción envolvente restauran los datos y las de autenticación eliminan su usuario de prueba. Flyway deja instaladas las migraciones y sus datos iniciales. Las pruebas de V2 esperan los valores fijos del ERS; no usar una base operativa personalizada.
 
 La instalación limpia y la actualización de V1.1 a V2 se verificaron previamente. La regresión actual comprueba los quince resultados de CP-01–CP-11 y los fallos HTTP sin información interna. Ver `docs/informe-pruebas-motor-simulacion.md` para tolerancias, el orden de los meses en CP-10 y lo pendiente. Esto no acredita aceptación del sistema completo desde navegador ni en producción.
 
@@ -129,7 +129,9 @@ Las rutas requieren un administrador activo; PUT conserva la protección CSRF. L
 y el tipo de ajuste del estrato son de solo lectura. No incluyen pantallas ni CRUD de paneles.
 Ver `docs/contrato-administracion-parametros.md` para cuerpos JSON y campos permitidos,
 y `docs/informe-pruebas-administracion-parametros.md` para rollback real, concurrencia
-y límites de verificación respecto del ERS original no disponible.
+y la correspondencia de CV-20–CV-23, CV-27 y CV-28 con el ERS original. La recuperación
+de sombra solo es editable para MLPE; central conserva cero. La vida útil debe respetar
+los límites de la base y la capacidad técnica compartida con el motor financiero.
 
 ## Cómo trabajamos en GitHub
 
