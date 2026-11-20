@@ -12,11 +12,11 @@ Equipo: Daniel Mendoza · Luis Hernández · Carlos Sandoval · Esteban Vidal
 - **Front-end previsto** (carpeta `frontend/`): aplicación que consumirá la API REST en JSON; aún no está implementada.
 - **Despliegue previsto:** Render (API) + Vercel (front-end).
 
-## Estado al 18 de noviembre de 2026
+## Estado al 20 de noviembre de 2026
 
-En `main` están el CI, las migraciones V1, V1.1 y V2, las once entidades JPA, los cuatro repositorios y la carga de `ConjuntoParametros`. La suite tiene 17 pruebas. Todavía faltan la solicitud de simulación, las calculadoras, los servicios y controladores funcionales, la autenticación administrativa y la interfaz web.
+Están implementados persistencia, autenticación administrativa, entrada y validación, tarifa, sombra, dimensionamiento, generación, ahorro, recuperación, ROI, recomendación y escenario sin sombra. La API pública `POST /api/simulaciones` permite calcular sin registro. La suite incluye 219 pruebas y una regresión de los once escenarios del ERS. Faltan la interfaz web, la administración completa de parámetros/paneles/bitácora, el despliegue y la aceptación final.
 
-El árbol siguiente muestra la arquitectura prevista; varias carpetas todavía no existen.
+El árbol siguiente combina componentes implementados y el validador administrativo todavía pendiente.
 
 ## Patrón MVC
 
@@ -34,8 +34,8 @@ src/main/java/com/solstitium/solstitium/
 ├── repository/        acceso a datos (Spring Data JPA)
 ├── model/
 │   ├── entity/        entidades JPA (una por tabla)
-│   └── dto/           ConjuntoParametros; previstos: SolicitudSimulacion, ResultadoSimulacion...
-├── config/            SecurityConfig, CORS
+│   └── dto/           ConjuntoParametros, SolicitudSimulacion, FactorSombra, ResultadoSimulacion...
+├── config/            ConfiguracionSeguridad, CORS
 └── exception/         manejador global de errores (mensajes claros en español)
 src/main/resources/db/migration/   V1__esquema.sql, V1_1__restricciones.sql, V2__datos_iniciales.sql
 ```
@@ -64,7 +64,25 @@ export DB_USERNAME=postgres DB_PASSWORD='<contraseña local>'
 ./mvnw spring-boot:run
 ```
 
-La aplicación todavía no expone una API de simulación. Spring Security conserva su configuración automática de desarrollo; V2 no crea administradores ni contraseñas compartidas.
+La aplicación expone `POST /api/simulaciones` sin sesión. El acceso administrativo usa Spring Security con sesión, BCrypt y CSRF. V2 no crea administradores ni contraseñas compartidas: se aprovisionarán por entorno. Ver `docs/contrato-autenticacion.md` y `docs/contrato-simulacion.md`.
+
+Ejemplo de simulación en PowerShell, con la aplicación iniciada:
+
+```powershell
+$solicitud = @{
+  consumos = @(160, 150, 140)
+  estrato = 1
+  areaLibre = 40
+  respuestasSombra = @(
+    @{franjaId = 1; porcionId = 1}
+    @{franjaId = 2; porcionId = 1}
+    @{franjaId = 3; porcionId = 1}
+  )
+} | ConvertTo-Json -Depth 4
+Invoke-RestMethod -Method Post -Uri 'http://localhost:8080/api/simulaciones' -ContentType 'application/json' -Body $solicitud
+```
+
+La factura es opcional y se contrasta con el último mes, en orden cronológico. Errores de entrada devuelven 400; configuración o base no disponibles, 503; fallos inesperados, 500 con mensaje genérico. No se almacenan las simulaciones. Los contratos detallan redondeos, advertencias, ausencia de recuperación y salida sin espacio.
 
 ## Migraciones y datos iniciales
 
@@ -95,9 +113,9 @@ $env:DB_URL = 'jdbc:postgresql://localhost:5432/solstitium_pruebas'
 ./mvnw.cmd verify
 ```
 
-Hay 17 pruebas: arranque (1), persistencia (4), carga de parámetros (6) y datos iniciales (6). Las pruebas JPA revierten los datos que modifican, pero Flyway deja instaladas las migraciones y sus datos iniciales. Las pruebas de V2 esperan los valores fijos del ERS; no usar una base operativa cuyos parámetros ya fueron personalizados.
+Hay 219 pruebas de arranque, persistencia, configuración, autenticación, validación, cálculo, servicio y API. Las pruebas JPA y las que modifican parámetros usan rollback; las de autenticación eliminan su usuario de prueba. Flyway deja instaladas las migraciones y sus datos iniciales. Las pruebas de V2 esperan los valores fijos del ERS; no usar una base operativa personalizada.
 
-La verificación local del 18 de noviembre terminó con `BUILD SUCCESS`: 17 pruebas aprobadas desde una base vacía y una prueba adicional de arranque para actualizar una base existente de V1.1 a V2. Esto no acredita todavía los CP/CV/NF del simulador completo.
+La instalación limpia y la actualización de V1.1 a V2 se verificaron previamente. La regresión actual comprueba los quince resultados de CP-01–CP-11 y los fallos HTTP sin información interna. Ver `docs/informe-pruebas-motor-simulacion.md` para tolerancias, el orden de los meses en CP-10 y lo pendiente. Esto no acredita aceptación del sistema completo desde navegador ni en producción.
 
 El job de interfaz del CI se omite sin `frontend/package-lock.json`; que salga verde no significa que exista o se haya probado el front-end.
 
@@ -110,4 +128,4 @@ El job de interfaz del CI se omite sin `frontend/package-lock.json`; que salga v
 - Nunca `push --force` sobre `main`.
 - Código propio, comentarios, mensajes y documentación en español, conservando los nombres del ERS y los identificadores obligatorios de las herramientas.
 
-El reparto por funcionalidad está en `docs/Plan_de_trabajo_SOLSTITIUM.pdf`. Sus fechas antiguas no se aplican: la entrega es el **22 de noviembre de 2026**. El flujo actualizado se acordó en el chat. El avance técnico se documenta en `docs/Documentacion_avance_SOLSTITIUM.docx`.
+El reparto por funcionalidad está en `docs/Plan_de_trabajo_SOLSTITIUM.pdf`. Sus fechas antiguas no se aplican: la entrega es el **22 de noviembre de 2026**. El flujo actualizado se acordó en el chat. El avance técnico se documenta en `docs/Documentacion_avance_SOLSTITIUM.docx`; los contratos y el informe de pruebas de esta carpeta detallan el motor y la API actuales.

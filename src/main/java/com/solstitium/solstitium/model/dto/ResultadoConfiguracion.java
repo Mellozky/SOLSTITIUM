@@ -17,7 +17,7 @@ public class ResultadoConfiguracion {
     private BigDecimal inversorKw;
     private BigDecimal costoTotal;
 
-    // Los completará CalculadoraFinanciera; null no representa ahorro cero ni no viabilidad.
+    // Los completa CalculadoraFinanciera; antes de esa etapa null no representa ahorro cero.
     private BigDecimal energiaMensual;
     private BigDecimal ahorroMensual;
     private BigDecimal gastoMensualConSistema;

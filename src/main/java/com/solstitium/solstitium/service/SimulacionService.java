@@ -63,10 +63,18 @@ public class SimulacionService {
         respuesta.setResultados(List.copyOf(resultados));
         var recomendacion = elegirRecomendacion(resultados);
         respuesta.setRecomendada(recomendacion == null ? null : recomendacion.getConfiguracion());
-        respuesta.setMotivoRecomendacion(recomendacion == null
-                ? "Ninguna configuración recupera la inversión durante la vida útil."
-                : resultados.size() == 1 ? "Es la única configuración evaluada y recupera la inversión."
-                : "Se recomienda " + recomendacion.getConfiguracion() + " por su menor tiempo de recuperación; en empate se conserva el orden del catálogo.");
+        if (recomendacion == null) {
+            respuesta.setMotivoRecomendacion("Ninguna configuración recupera la inversión durante la vida útil.");
+        } else if (resultados.size() == 1) {
+            respuesta.setMotivoRecomendacion("Es la única configuración evaluada y recupera la inversión.");
+        } else {
+            boolean empate = resultados.stream().filter(resultado -> resultado.getTiempoRecuperacion() != null)
+                    .filter(resultado -> resultado.getTiempoRecuperacion().compareTo(recomendacion.getTiempoRecuperacion()) == 0)
+                    .count() > 1;
+            respuesta.setMotivoRecomendacion(empate
+                    ? "Las configuraciones recuperan la inversión en el mismo tiempo; se presenta " + recomendacion.getConfiguracion() + "."
+                    : "Se recomienda " + recomendacion.getConfiguracion() + " por su menor tiempo de recuperación.");
+        }
         if (sombra.getFactor().compareTo(BigDecimal.ONE) < 0) {
             var central = parametros.getConfiguraciones().stream().filter(actual -> actual.getCodigo().equals("central"))
                     .findFirst().orElseThrow(() -> new IllegalStateException("Falta la configuración central."));
