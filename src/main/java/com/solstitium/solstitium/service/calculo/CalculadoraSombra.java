@@ -72,7 +72,7 @@ public class CalculadoraSombra {
     }
 
     /** Intervalos [mínimo, máximo), excepto un tramo puntual como sin sombra [1, 1]. */
-    TramoSombra clasificarTramo(BigDecimal factor, ConjuntoParametros conjunto) {
+    public TramoSombra clasificarTramo(BigDecimal factor, ConjuntoParametros conjunto) {
         validarFraccion(factor, "factor de sombra");
         var coincidencias = conjunto.getTramos().stream().filter(tramo -> {
             BigDecimal minimo = tramo.getFactorMinimo();

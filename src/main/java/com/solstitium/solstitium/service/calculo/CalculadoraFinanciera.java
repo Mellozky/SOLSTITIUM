@@ -1,6 +1,7 @@
 package com.solstitium.solstitium.service.calculo;
 
 import com.solstitium.solstitium.model.dto.ConjuntoParametros;
+import com.solstitium.solstitium.model.dto.FactorSombra;
 import com.solstitium.solstitium.model.dto.ResultadoConfiguracion;
 import com.solstitium.solstitium.model.dto.SolicitudSimulacion;
 import java.math.BigDecimal;
@@ -21,6 +22,13 @@ public class CalculadoraFinanciera {
     public void calcularIndicadores(ResultadoConfiguracion resultado, SolicitudSimulacion solicitud,
                                     ConjuntoParametros conjunto) {
         calcularGeneracionYAhorro(resultado, solicitud, conjunto);
+        calcularRentabilidad(resultado, conjunto);
+    }
+
+    /** Reutiliza un factor ya calculado, incluido el escenario informativo sin sombra. */
+    public void calcularIndicadores(ResultadoConfiguracion resultado, SolicitudSimulacion solicitud,
+                                    ConjuntoParametros conjunto, FactorSombra sombra) {
+        calcularGeneracionYAhorro(resultado, solicitud, conjunto, sombra);
         calcularRentabilidad(resultado, conjunto);
     }
 
@@ -106,6 +114,11 @@ public class CalculadoraFinanciera {
 
     public void calcularGeneracionYAhorro(ResultadoConfiguracion resultado, SolicitudSimulacion solicitud,
                                           ConjuntoParametros conjunto) {
+        calcularGeneracionYAhorro(resultado, solicitud, conjunto, null);
+    }
+
+    private void calcularGeneracionYAhorro(ResultadoConfiguracion resultado, SolicitudSimulacion solicitud,
+                                           ConjuntoParametros conjunto, FactorSombra sombraPrecalculada) {
         if (resultado == null || resultado.getPaneles() < 0) {
             throw new IllegalArgumentException("Debe proporcionar un resultado técnico válido.");
         }
@@ -123,7 +136,8 @@ public class CalculadoraFinanciera {
         if (recuperacion == null || recuperacion.signum() < 0 || recuperacion.compareTo(BigDecimal.ONE) > 0) {
             throw new IllegalStateException("El coeficiente de recuperación debe estar entre cero y uno.");
         }
-        var sombra = calculadoraSombra.calcularFactor(solicitud.getRespuestasSombra(), conjunto);
+        var sombra = sombraPrecalculada != null ? sombraPrecalculada
+                : calculadoraSombra.calcularFactor(solicitud.getRespuestasSombra(), conjunto);
         BigDecimal factor = BigDecimal.ONE.subtract(sombra.getPerdida().multiply(BigDecimal.ONE.subtract(recuperacion)));
         BigDecimal hsp = parametroPositivo(conjunto, "hsp");
         BigDecimal rendimiento = parametroPositivo(conjunto, "factor_rendimiento");
@@ -139,6 +153,7 @@ public class CalculadoraFinanciera {
         BigDecimal gastoConSolar = calculadoraTarifa.calcularCostoMensual(consumo.subtract(aprovechada), solicitud.getEstrato(), conjunto);
         resultado.setEnergiaMensual(aprovechada);
         resultado.setAhorroMensual(gastoSinSolar.subtract(gastoConSolar));
+        resultado.setGastoMensualConSistema(gastoConSolar);
         resultado.setCobertura(aprovechada.divide(consumo, PRECISION).movePointRight(2));
     }
 

@@ -20,6 +20,7 @@ public class ResultadoConfiguracion {
     // Los completará CalculadoraFinanciera; null no representa ahorro cero ni no viabilidad.
     private BigDecimal energiaMensual;
     private BigDecimal ahorroMensual;
+    private BigDecimal gastoMensualConSistema;
     private BigDecimal cobertura;
     private BigDecimal tiempoRecuperacion;
     private BigDecimal roi;
