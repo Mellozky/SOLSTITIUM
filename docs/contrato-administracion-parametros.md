@@ -12,6 +12,12 @@ Las tres rutas requieren la sesión administrativa descrita en `contrato-autenti
 sesión y se comprueba que continúe activo. El cuerpo nunca identifica al autor.
 Sin sesión: 401; sin permiso o CSRF: 403.
 
+La consulta utiliza una transacción de lectura repetible. Las actualizaciones bloquean
+en orden las filas de parámetros generales antes de cargar y validar el conjunto,
+serializando los lotes de este módulo para impedir incoherencias por escrituras concurrentes.
+Un futuro servicio de paneles debe coordinar sus escrituras si también modifica invariantes
+compartidas; este contrato no implementa ese servicio.
+
 ## Consulta
 
 `GET /api/admin/parametros?seccion=tarifas`
@@ -70,6 +76,7 @@ Paneles, límites, identificadores, nombres, orden, códigos y tipo_ajuste son d
 lectura en este módulo. No se construye SQL con nombres enviados por el cliente.
 Los números deben ser números JSON exactos, sin redondeo silencioso a la escala de BD;
 vida_util debe ser entero. Horas: cadena `HH:mm`, límites en minutos desde medianoche.
+La vida útil también debe caber en el entero utilizado por el motor financiero existente.
 Booleanos: true/false. `configuraciones`: lista no vacía de identificadores enteros existentes,
 sin duplicados; siempre debe incluir la configuración central.
 `anios_maximo` admite null únicamente en el último rango, como extremo sin límite.

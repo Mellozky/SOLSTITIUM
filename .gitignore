@@ -40,3 +40,6 @@ build/
 ### Front-end (frontend/) ###
 node_modules/
 frontend/dist/
+
+# Entorno y resultados temporales de verificación local
+/tmp/

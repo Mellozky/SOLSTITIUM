@@ -14,9 +14,9 @@ Equipo: Daniel Mendoza · Luis Hernández · Carlos Sandoval · Esteban Vidal
 
 ## Estado al 20 de noviembre de 2026
 
-Están implementados persistencia, autenticación administrativa, entrada y validación, tarifa, sombra, dimensionamiento, generación, ahorro, recuperación, ROI, recomendación y escenario sin sombra. La API pública `POST /api/simulaciones` permite calcular sin registro. La suite incluye 219 pruebas y una regresión de los once escenarios del ERS. Faltan la interfaz web, la administración completa de parámetros/paneles/bitácora, el despliegue y la aceptación final.
+Están implementados persistencia, autenticación administrativa, entrada y validación, tarifa, sombra, dimensionamiento, generación, ahorro, recuperación, ROI, recomendación y escenario sin sombra. La API pública `POST /api/simulaciones` permite calcular sin registro. La administración permite consultar y actualizar parámetros existentes y consultar su bitácora con sesión y CSRF. La suite incluye 293 pruebas y una regresión de los once escenarios del ERS. Faltan la interfaz web, el CRUD administrativo de paneles, el despliegue y la aceptación final.
 
-El árbol siguiente combina componentes implementados y el validador administrativo todavía pendiente.
+El árbol siguiente muestra las capas implementadas; la interfaz web sigue pendiente.
 
 ## Patrón MVC
 
@@ -29,8 +29,8 @@ Vista (frontend/)  ──HTTP/JSON──▶  Controlador  ──▶  Servicio  �
 ```
 src/main/java/com/solstitium/solstitium/
 ├── controller/        @RestController: recibe la petición, valida el DTO y delega en UN servicio
-├── service/           reglas de negocio y transacciones
-│   └── calculo/       CalculadoraSombra, CalculadoraTecnica, CalculadoraFinanciera, ValidadorParametros
+├── service/           reglas, transacciones y ValidadorParametros
+│   └── calculo/       CalculadoraSombra, CalculadoraTarifa, CalculadoraTecnica, CalculadoraFinanciera
 ├── repository/        acceso a datos (Spring Data JPA)
 ├── model/
 │   ├── entity/        entidades JPA (una por tabla)
@@ -104,7 +104,7 @@ Convenciones para el código que consumirá estos datos:
 
 `ParametroRepository.obtenerParametros()` delega en el fragmento `CargaParametros` y su implementación. Reúne los nueve grupos de la figura 5 del ERS en un DTO interno. Carga las configuraciones de cada tramo antes de cerrar la transacción, ordena las listas y rechaza grupos vacíos o la ausencia del panel de referencia activo.
 
-La lectura inicia una transacción de solo lectura con aislamiento repetible; si el llamador ya abrió una transacción, participa en ella y hereda su aislamiento. La coherencia completa y el guardado con bitácora corresponden a funcionalidades futuras.
+La lectura inicia una transacción de solo lectura con aislamiento repetible; si el llamador ya abrió una transacción, participa en ella y hereda su aislamiento. La administración implementa validación de límites y coherencia antes de guardar cada valor modificado junto con su bitácora en una transacción.
 
 Usar una **base exclusiva de pruebas**, con permisos para aplicar Flyway, y dirigir `DB_URL` a ella:
 
@@ -113,11 +113,23 @@ $env:DB_URL = 'jdbc:postgresql://localhost:5432/solstitium_pruebas'
 ./mvnw.cmd verify
 ```
 
-Hay 219 pruebas de arranque, persistencia, configuración, autenticación, validación, cálculo, servicio y API. Las pruebas JPA y las que modifican parámetros usan rollback; las de autenticación eliminan su usuario de prueba. Flyway deja instaladas las migraciones y sus datos iniciales. Las pruebas de V2 esperan los valores fijos del ERS; no usar una base operativa personalizada.
+Hay 293 pruebas de arranque, persistencia, configuración, autenticación, validación, cálculo, administración, servicio y API. Las pruebas JPA y MVC usan rollback; las transaccionales administrativas sin transacción envolvente restauran los datos y las de autenticación eliminan su usuario de prueba. Flyway deja instaladas las migraciones y sus datos iniciales. Las pruebas de V2 esperan los valores fijos del ERS; no usar una base operativa personalizada.
 
 La instalación limpia y la actualización de V1.1 a V2 se verificaron previamente. La regresión actual comprueba los quince resultados de CP-01–CP-11 y los fallos HTTP sin información interna. Ver `docs/informe-pruebas-motor-simulacion.md` para tolerancias, el orden de los meses en CP-10 y lo pendiente. Esto no acredita aceptación del sistema completo desde navegador ni en producción.
 
 El job de interfaz del CI se omite sin `frontend/package-lock.json`; que salga verde no significa que exista o se haya probado el front-end.
+
+## API administrativa de parámetros
+
+- `GET /api/admin/parametros?seccion=tarifas`: consultar `tarifas`, `tecnicos`, `sombreado`, `costos` o `rangos`, con sus límites.
+- `PUT /api/admin/parametros`: actualizar un lote de valores existentes, validando límites y coherencia; auditoría por valor realmente modificado y autor obtenido de la sesión.
+- `GET /api/admin/bitacora`: consultar cambios del más reciente al más antiguo.
+
+Las rutas requieren un administrador activo; PUT conserva la protección CSRF. Los límites
+y el tipo de ajuste del estrato son de solo lectura. No incluyen pantallas ni CRUD de paneles.
+Ver `docs/contrato-administracion-parametros.md` para cuerpos JSON y campos permitidos,
+y `docs/informe-pruebas-administracion-parametros.md` para rollback real, concurrencia
+y límites de verificación respecto del ERS original no disponible.
 
 ## Cómo trabajamos en GitHub
 
