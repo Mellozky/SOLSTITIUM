@@ -92,3 +92,7 @@ jobs:
       - name: Compilar
         if: steps.front.outputs.existe == 'true'
         run: npm run build
+
+      - name: Ejecutar pruebas del front-end
+        if: steps.front.outputs.existe == 'true'
+        run: npm test
