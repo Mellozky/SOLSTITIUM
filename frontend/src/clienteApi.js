@@ -1,10 +1,22 @@
-export async function solicitarJson(ruta, { datos, signal } = {}) {
-  const cabeceras = { Accept: 'application/json' };
-  const opciones = { headers: cabeceras, signal, cache: 'no-store' };
+export async function solicitarJson(ruta, {
+  datos,
+  metodo = datos === undefined ? 'GET' : 'POST',
+  tokenCsrf,
+  signal,
+} = {}) {
+  const cabeceras = new Headers({ Accept: 'application/json' });
+  const opciones = {
+    method: metodo,
+    headers: cabeceras,
+    credentials: 'include',
+    cache: 'no-store',
+    signal,
+  };
+
+  if (tokenCsrf) cabeceras.set('X-CSRF-TOKEN', tokenCsrf);
 
   if (datos !== undefined) {
-    cabeceras['Content-Type'] = 'application/json';
-    opciones.method = 'POST';
+    cabeceras.set('Content-Type', 'application/json');
     opciones.body = JSON.stringify(datos);
   }
 
@@ -23,12 +35,13 @@ export async function solicitarJson(ruta, { datos, signal } = {}) {
     contenido = await respuesta.json();
   } catch (error) {
     if (signal?.aborted) throw error;
-    throw new Error('El servidor devolvió una respuesta que no se pudo leer.');
+    if (respuesta.ok) throw new Error('El servidor devolvió una respuesta que no se pudo leer.');
   }
 
   if (!respuesta.ok) {
     const mensaje = typeof contenido?.mensaje === 'string' && contenido.mensaje.trim();
     const error = new Error(mensaje || 'El servidor rechazó la solicitud. Intenta nuevamente.');
+    error.estado = respuesta.status;
     error.detalles = Array.isArray(contenido?.errores)
       ? contenido.errores.filter((detalle) => typeof detalle === 'string' && detalle.trim())
       : [];
