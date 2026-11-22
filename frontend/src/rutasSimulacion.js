@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-const rutas = ['/simulacion/consumo', '/simulacion/vivienda', '/simulacion/sombra'];
+const rutas = ['/simulacion/consumo', '/simulacion/vivienda', '/simulacion/sombra', '/simulacion/resultados'];
 const claveAnterior = 'pasoAnteriorSimulacion';
 
 function leerPaso() {

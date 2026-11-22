@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Consumo } from './Consumo.jsx';
 import { Vivienda } from './Vivienda.jsx';
+import { Resultados } from './Resultados.jsx';
 import { MAXIMO_MESES, prepararEntradaSimulacion } from './entrada.js';
 import { usarRutaSimulacion } from './rutasSimulacion.js';
 import { solicitarJson } from './clienteApi.js';
@@ -18,7 +19,9 @@ export function Simulador() {
   const [area, cambiarArea] = useState('');
   const [entradaConsumo, cambiarEntradaConsumo] = useState(null);
   const [entradaPreparada, cambiarEntradaPreparada] = useState(null);
-  const [paso, cambiarPaso] = usarRutaSimulacion(entradaPreparada ? 2 : entradaConsumo ? 1 : 0);
+  const [resultado, cambiarResultado] = useState(null);
+  const [paso, cambiarPaso] = usarRutaSimulacion(
+    resultado ? 3 : entradaPreparada ? 2 : entradaConsumo ? 1 : 0);
   const contenido = useRef(null);
   const pasoAnterior = useRef(paso);
 
@@ -33,6 +36,28 @@ export function Simulador() {
       });
     return () => control.abort();
   }, [intento]);
+
+  // Para el paso de sombra: enviar con solicitarJson('simulaciones', { datos }) y pasar aquí la respuesta.
+  function mostrarResultado(respuesta) {
+    cambiarResultado(respuesta);
+    cambiarPaso(3);
+  }
+
+  // Cualquier cambio en los datos invalida la entrada preparada y el resultado anterior.
+  function descartarCalculos() {
+    cambiarEntradaPreparada(null);
+    cambiarResultado(null);
+  }
+
+  function reiniciar() {
+    cambiarMeses(Array(MAXIMO_MESES).fill(''));
+    cambiarFactura('');
+    cambiarEstrato(null);
+    cambiarArea('');
+    cambiarEntradaConsumo(null);
+    descartarCalculos();
+    cambiarPaso(0);
+  }
 
   useEffect(() => {
     if (pasoAnterior.current !== paso) contenido.current.querySelector('h1').focus();
@@ -71,11 +96,11 @@ export function Simulador() {
           <Consumo meses={meses} factura={factura} cambiarMeses={(valores) => {
             cambiarMeses(valores);
             cambiarEntradaConsumo(null);
-            cambiarEntradaPreparada(null);
+            descartarCalculos();
           }} cambiarFactura={(valor) => {
             cambiarFactura(valor);
             cambiarEntradaConsumo(null);
-            cambiarEntradaPreparada(null);
+            descartarCalculos();
           }} parametros={parametros} alContinuar={(datos) => {
               cambiarEntradaConsumo(datos);
               cambiarPaso(1);
@@ -84,10 +109,10 @@ export function Simulador() {
         {paso === 1 && (
           <Vivienda estrato={estrato} area={area} cambiarEstrato={(valor) => {
             cambiarEstrato(valor);
-            cambiarEntradaPreparada(null);
+            descartarCalculos();
           }} cambiarArea={(valor) => {
             cambiarArea(valor);
-            cambiarEntradaPreparada(null);
+            descartarCalculos();
           }}
             parametros={parametros} alRegresar={() => cambiarPaso(0)} alContinuar={() => {
               cambiarEntradaPreparada(prepararEntradaSimulacion(entradaConsumo, estrato, area));
@@ -95,6 +120,7 @@ export function Simulador() {
             }} />
         )}
         {paso === 2 && entradaPreparada && <SombraPendiente alRegresar={() => cambiarPaso(1)} />}
+        {paso === 3 && resultado && <Resultados resultado={resultado} alReiniciar={reiniciar} />}
       </main>
     </>
   );

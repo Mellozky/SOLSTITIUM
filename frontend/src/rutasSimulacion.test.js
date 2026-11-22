@@ -49,3 +49,23 @@ test('Atrás sin un paso previo registrado reemplaza la entrada y conserva el hi
   historial.back();
   assert.equal(historial.ruta, '/admin/ingreso');
 });
+
+test('Resultados tiene su propia ruta y Atrás regresa a Sombra', () => {
+  const historial = crearHistorial(['/']);
+
+  navegarPaso(historial, 0, 1);
+  navegarPaso(historial, 1, 2);
+  navegarPaso(historial, 2, 3);
+  assert.equal(historial.ruta, '/simulacion/resultados');
+
+  assert.equal(navegarPaso(historial, 3, 2), false);
+  assert.equal(historial.ruta, '/simulacion/sombra');
+});
+
+test('Nueva simulación desde Resultados reemplaza la entrada y vuelve a Consumo', () => {
+  const historial = crearHistorial(['/simulacion/resultados']);
+
+  assert.equal(navegarPaso(historial, 3, 0), true);
+  assert.equal(historial.ruta, '/simulacion/consumo');
+  assert.equal(historial.length, 1);
+});
