@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Consumo } from './Consumo.jsx';
 import { Vivienda } from './Vivienda.jsx';
+import { Resultados } from './Resultados.jsx';
 import { MAXIMO_MESES, prepararEntradaSimulacion } from './entrada.js';
 
 const pasos = ['Consumo', 'Vivienda y techo', 'Sombra', 'Resultados'];
@@ -16,6 +17,7 @@ export function Simulador() {
   const [area, cambiarArea] = useState('');
   const [entradaConsumo, cambiarEntradaConsumo] = useState(null);
   const [entradaPreparada, cambiarEntradaPreparada] = useState(null);
+  const [resultado, cambiarResultado] = useState(null);
   const contenido = useRef(null);
   const pasoAnterior = useRef(paso);
 
@@ -35,6 +37,23 @@ export function Simulador() {
       });
     return () => control.abort();
   }, [intento]);
+
+  // Para el paso de sombra: enviar con solicitarSimulacion (simulacion.js) y pasar aquí la respuesta.
+  function mostrarResultado(respuesta) {
+    cambiarResultado(respuesta);
+    cambiarPaso(3);
+  }
+
+  function reiniciar() {
+    cambiarMeses(Array(MAXIMO_MESES).fill(''));
+    cambiarFactura('');
+    cambiarEstrato(null);
+    cambiarArea('');
+    cambiarEntradaConsumo(null);
+    cambiarEntradaPreparada(null);
+    cambiarResultado(null);
+    cambiarPaso(0);
+  }
 
   useEffect(() => {
     if (pasoAnterior.current !== paso) contenido.current.querySelector('h1').focus();
@@ -85,6 +104,7 @@ export function Simulador() {
             }} />
         )}
         {paso === 2 && entradaPreparada && <SombraPendiente alRegresar={() => cambiarPaso(1)} />}
+        {paso === 3 && resultado && <Resultados resultado={resultado} alReiniciar={reiniciar} />}
       </main>
     </>
   );
