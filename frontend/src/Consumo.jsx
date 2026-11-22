@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { prepararConsumo, revisarConsumo } from './entrada.js';
+import { solicitarJson } from './clienteApi.js';
+import { MensajeApi } from './MensajeApi.jsx';
 
 const formatoPromedio = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 2 });
 
@@ -11,17 +13,13 @@ function PromedioConsumo({ consulta, cantidad }) {
     const control = new AbortController();
     const espera = setTimeout(async () => {
       try {
-        const respuesta = await fetch('/api/simulaciones/promedio-consumo', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: consulta,
+        const valor = await solicitarJson('simulaciones/promedio-consumo', {
+          datos: JSON.parse(consulta),
           signal: control.signal,
         });
-        if (!respuesta.ok) throw new Error();
-        const valor = await respuesta.json();
         if (!control.signal.aborted) cambiarResultado({ consulta, valor });
-      } catch {
-        if (!control.signal.aborted) cambiarResultado({ consulta, error: true });
+      } catch (error) {
+        if (!control.signal.aborted) cambiarResultado({ consulta, error });
       }
     }, 350);
     return () => {
@@ -36,7 +34,7 @@ function PromedioConsumo({ consulta, cantidad }) {
       <div aria-live="polite">
         <div>Promedio mensual{consulta && ` (${cantidad} ${cantidad === 1 ? 'mes ingresado' : 'meses ingresados'})`}</div>
         {actual?.error
-          ? <small>No se pudo consultar el promedio.</small>
+          ? <MensajeApi error={actual.error} />
           : <strong>{actual ? `${formatoPromedio.format(actual.valor)} kWh` : '—'}</strong>}
       </div>
       <small>Ingresa consumos consecutivos, empezando por el mes más reciente.</small>
