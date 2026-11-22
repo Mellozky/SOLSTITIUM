@@ -1,6 +1,7 @@
 package com.solstitium.solstitium.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.number.BigDecimalCloseTo.closeTo;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -22,6 +23,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
 /** Todos los cambios de estos casos se revierten; las llamadas recorren seguridad, MVC, servicio y PostgreSQL. */
@@ -130,6 +132,57 @@ class AdministracionParametrosTest {
     }
 
     @Test
+    void respetaElRangoDeVidaUtilYAuditaLaRestauracionCv30() throws Exception {
+        assertThat(consultas.update("""
+                update limite_parametro set valor_minimo = 1, valor_maximo = 50
+                where tabla = 'parametro' and campo = 'valor' and clave = 'vida_util'
+                """)).isEqualTo(1);
+        var sesion = iniciarSesion();
+        String consultaVidaUtil = "select valor, fecha_actualizacion from parametro where clave = 'vida_util'";
+        var vidaOriginal = consultas.queryForMap(consultaVidaUtil);
+        assertThat((BigDecimal) vidaOriginal.get("valor")).isEqualByComparingTo("25");
+
+        for (String valor : new String[] {"100000000", "51"}) {
+            cambiarVidaUtil(sesion, valor).andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.errores[0]").value("El valor de parametro.valor debe estar entre 1.0000 y 50.0000."));
+            assertThat(consultas.queryForMap(consultaVidaUtil)).isEqualTo(vidaOriginal);
+            assertThat(cantidadBitacora()).isZero();
+        }
+
+        cliente.perform(post("/api/simulaciones").contentType(MediaType.APPLICATION_JSON).content("""
+                {"consumos":[160,150,140],"estrato":1,"areaLibre":40,"respuestasSombra":[
+                  {"franjaId":1,"porcionId":1},{"franjaId":2,"porcionId":1},{"franjaId":3,"porcionId":1}
+                ]}
+                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.recomendada").value("central"))
+                .andExpect(jsonPath("$.resultados[0].paneles").value(3))
+                .andExpect(jsonPath("$.resultados[0].ahorroMensual").value(75000))
+                .andExpect(jsonPath("$.resultados[0].tiempoRecuperacion")
+                        .value(closeTo(new BigDecimal("6.40"), new BigDecimal("0.005"))))
+                .andExpect(jsonPath("$.resultados[0].roi")
+                        .value(closeTo(new BigDecimal("550.8"), new BigDecimal("0.05"))));
+
+        cambiarVidaUtil(sesion, "50").andExpect(status().isOk()).andExpect(jsonPath("$.modificados").value(1));
+        assertThat((BigDecimal) consultas.queryForMap(consultaVidaUtil).get("valor")).isEqualByComparingTo("50");
+        cambiarVidaUtil(sesion, "25").andExpect(status().isOk()).andExpect(jsonPath("$.modificados").value(1));
+        assertThat((BigDecimal) consultas.queryForMap(consultaVidaUtil).get("valor")).isEqualByComparingTo("25");
+
+        assertThat(cantidadBitacora()).isEqualTo(2);
+        cliente.perform(get("/api/admin/bitacora").session(sesion)).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].registroId").value("vida_util"))
+                .andExpect(jsonPath("$[0].administrador").value(USUARIO))
+                .andExpect(jsonPath("$[0].fecha").isNotEmpty())
+                .andExpect(jsonPath("$[0].valorAnterior").value("50"))
+                .andExpect(jsonPath("$[0].valorNuevo").value("25"))
+                .andExpect(jsonPath("$[1].registroId").value("vida_util"))
+                .andExpect(jsonPath("$[1].administrador").value(USUARIO))
+                .andExpect(jsonPath("$[1].fecha").isNotEmpty())
+                .andExpect(jsonPath("$[1].valorAnterior").value("25"))
+                .andExpect(jsonPath("$[1].valorNuevo").value("50"));
+    }
+
+    @Test
     void rechazaUnHorizonteCuyaCombinacionDesbordaElCalculo() throws Exception {
         actualizar(lote(cambio("parametro", "vida_util", "valor", "999999999"),
                 cambio("parametro", "incremento_anual_tarifa", "valor", "9999999999")), 400, null);
@@ -169,11 +222,7 @@ class AdministracionParametrosTest {
 
     @Test
     void sesionRealActualizaYAuditaConSuAutor() throws Exception {
-        var inicio = cliente.perform(post("/api/autenticacion/iniciar-sesion").with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"usuario\":\"" + USUARIO + "\",\"contrasena\":\"" + CONTRASENA + "\"}"))
-                .andExpect(status().isOk()).andReturn();
-        var sesion = (MockHttpSession) inicio.getRequest().getSession(false);
+        var sesion = iniciarSesion();
         var fechaAnterior = consultas.queryForObject("select fecha_actualizacion from parametro where clave='costo_unitario_kwh'", java.time.LocalDateTime.class);
         cliente.perform(put("/api/admin/parametros").session(sesion).with(csrf()).contentType(MediaType.APPLICATION_JSON)
                 .content(lote(cambio("parametro", "costo_unitario_kwh", "valor", "1100"),
@@ -374,6 +423,20 @@ class AdministracionParametrosTest {
     void rechazaSeccionAusenteODesconocida() throws Exception {
         cliente.perform(get("/api/admin/parametros").with(user(USUARIO).roles("ADMIN"))).andExpect(status().isBadRequest());
         cliente.perform(get("/api/admin/parametros").param("seccion", "paneles").with(user(USUARIO).roles("ADMIN"))).andExpect(status().isBadRequest());
+    }
+
+    private MockHttpSession iniciarSesion() throws Exception {
+        var inicio = cliente.perform(post("/api/autenticacion/iniciar-sesion").with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"usuario\":\"" + USUARIO + "\",\"contrasena\":\"" + CONTRASENA + "\"}"))
+                .andExpect(status().isOk()).andReturn();
+        return (MockHttpSession) inicio.getRequest().getSession(false);
+    }
+
+    private ResultActions cambiarVidaUtil(MockHttpSession sesion, String valor) throws Exception {
+        return cliente.perform(put("/api/admin/parametros").session(sesion).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(lote(cambio("parametro", "vida_util", "valor", valor))));
     }
 
     private void actualizar(String cuerpo, int estado, Integer modificados) throws Exception {
