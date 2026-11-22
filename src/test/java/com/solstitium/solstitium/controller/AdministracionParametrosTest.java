@@ -30,6 +30,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 class AdministracionParametrosTest {
     private static final String USUARIO = "prueba_parametros";
+    private static final String CONTRASENA = "ClaveTemporal-456";
+    /** Cada hash BCrypt cuesta unos 130 ms: se calcula una vez por clase y no antes de cada prueba. */
+    private static String hashContrasena;
     @Autowired private MockMvc cliente;
     @Autowired private JdbcTemplate consultas;
     @Autowired private PasswordEncoder codificador;
@@ -37,8 +40,9 @@ class AdministracionParametrosTest {
 
     @BeforeEach
     void preparar() {
+        if (hashContrasena == null) hashContrasena = codificador.encode(CONTRASENA);
         consultas.update("insert into administrador (usuario, contrasena_hash, nombre, activo) values (?, ?, ?, true)",
-                USUARIO, codificador.encode("ClaveTemporal-456"), "Prueba administrativa");
+                USUARIO, hashContrasena, "Prueba administrativa");
     }
 
     @ParameterizedTest
@@ -167,7 +171,7 @@ class AdministracionParametrosTest {
     void sesionRealActualizaYAuditaConSuAutor() throws Exception {
         var inicio = cliente.perform(post("/api/autenticacion/iniciar-sesion").with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"usuario\":\"prueba_parametros\",\"contrasena\":\"ClaveTemporal-456\"}"))
+                .content("{\"usuario\":\"" + USUARIO + "\",\"contrasena\":\"" + CONTRASENA + "\"}"))
                 .andExpect(status().isOk()).andReturn();
         var sesion = (MockHttpSession) inicio.getRequest().getSession(false);
         var fechaAnterior = consultas.queryForObject("select fecha_actualizacion from parametro where clave='costo_unitario_kwh'", java.time.LocalDateTime.class);

@@ -31,14 +31,18 @@ class CatalogoPanelesTest {
     private static final String DATOS = """
             {"marca":"Nueva marca","modelo":"Nuevo modelo","potenciaWp":600,"areaM2":2.8}
             """;
+    private static final String CONTRASENA = "TemporalCatalogo-789";
+    /** Cada hash BCrypt cuesta unos 130 ms: se calcula una vez por clase y no antes de cada prueba. */
+    private static String hashContrasena;
     @Autowired private MockMvc cliente;
     @Autowired private JdbcTemplate consultas;
     @Autowired private PasswordEncoder codificador;
 
     @BeforeEach
     void preparar() {
+        if (hashContrasena == null) hashContrasena = codificador.encode(CONTRASENA);
         consultas.update("insert into administrador (usuario, contrasena_hash, nombre, activo) values (?, ?, ?, true)",
-                USUARIO, codificador.encode("TemporalCatalogo-789"), "Prueba catálogo");
+                USUARIO, hashContrasena, "Prueba catálogo");
     }
 
     @Test
@@ -83,7 +87,7 @@ class CatalogoPanelesTest {
         var sesion = new MockHttpSession();
         cliente.perform(post("/api/autenticacion/iniciar-sesion").session(sesion).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"usuario\":\"" + USUARIO + "\",\"contrasena\":\"TemporalCatalogo-789\"}"))
+                        .content("{\"usuario\":\"" + USUARIO + "\",\"contrasena\":\"" + CONTRASENA + "\"}"))
                 .andExpect(status().isOk());
         cliente.perform(post("/api/admin/paneles").session(sesion).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content(DATOS))
