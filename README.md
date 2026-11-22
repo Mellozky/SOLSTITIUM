@@ -64,7 +64,25 @@ export DB_USERNAME=postgres DB_PASSWORD='<contraseña local>'
 ./mvnw spring-boot:run
 ```
 
-La aplicación expone `POST /api/simulaciones` sin sesión. El acceso administrativo usa Spring Security con sesión, BCrypt y CSRF. V2 no crea administradores ni contraseñas compartidas: se aprovisionarán por entorno. Ver `docs/contrato-autenticacion.md` y `docs/contrato-simulacion.md`.
+La aplicación expone `POST /api/simulaciones` sin sesión. El acceso administrativo usa Spring Security con sesión, BCrypt y CSRF. V2 no crea administradores ni contraseñas compartidas. Ver `docs/contrato-autenticacion.md` y `docs/contrato-simulacion.md`.
+
+### Crear un administrador
+
+El ERS indica que los administradores se cargan por script al instalar el sistema. Desde la raíz del repositorio:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\crear-administrador.ps1               # crear
+powershell -ExecutionPolicy Bypass -File scripts\crear-administrador.ps1 -Restablecer  # cambiar la contraseña
+```
+
+```bash
+scripts/crear-administrador.sh                # crear
+scripts/crear-administrador.sh --restablecer  # cambiar la contraseña
+```
+
+El script pide usuario, nombre y contraseña (mínimo 10 caracteres, oculta y con confirmación). Usa `DB_URL`, `DB_USERNAME` y `DB_PASSWORD` si existen; si no, se conecta a `localhost:5432/solstitium` con `postgres` y pide la contraseña de PostgreSQL. Guarda solo el hash BCrypt y no deja la contraseña en archivos ni en el historial. Arranca la aplicación en un puerto libre, crea el usuario y termina, así que puede usarse con la API en marcha.
+
+En un servidor ya desplegado, el mismo comando funciona con el JAR: definir `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `ADMIN_USUARIO`, `ADMIN_NOMBRE` y `ADMIN_CONTRASENA` y ejecutar `java -jar SOLSTITIUM-0.0.1-SNAPSHOT.jar --crear-administrador --server.port=0` (o `--restablecer-contrasena-administrador`, sin `ADMIN_NOMBRE`).
 
 Ejemplo de simulación en PowerShell, con la aplicación iniciada:
 
@@ -102,7 +120,7 @@ Abre `http://localhost:5173`. Vite redirige las peticiones de `/api` a Spring Bo
 
 Flyway registra las versiones en `flyway_schema_history` y aplica solo las pendientes. No editar migraciones publicadas o aplicadas. V2 no se repite en cada inicio ni sobrescribe cambios posteriores.
 
-Los valores son supuestos de prueba, no precios ni cotizaciones reales. Las marcas y modelos de los paneles son ficticios. No se crean administradores; se deberán aprovisionar por entorno con BCrypt. La bitácora queda vacía al instalar.
+Los valores son supuestos de prueba, no precios ni cotizaciones reales. Las marcas y modelos de los paneles son ficticios. No se crean administradores: se crean con `scripts/crear-administrador` (ver «Crear un administrador»). La bitácora queda vacía al instalar.
 
 Convenciones para el código que consumirá estos datos:
 
