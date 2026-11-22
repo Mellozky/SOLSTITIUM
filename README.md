@@ -116,7 +116,43 @@ Abre `http://localhost:5173`. Vite redirige las peticiones de `/api` a Spring Bo
 
 Residentes y administradores usan la misma dirección. El enlace «Administración» de la cabecera del simulador lleva a `/admin`, que muestra el inicio de sesión si no hay una sesión activa. Si el residente ya ingresó datos, se pide confirmación antes de salir, porque las simulaciones no se guardan. La pantalla de ingreso y la cabecera de administración tienen «Volver al simulador». Para ingresar hace falta un administrador creado con el script de «Crear un administrador».
 
-Por ahora el front-end se sirve con Vite (`npm run dev`); Spring Boot no lo empaqueta. El enlace en la cabecera es un cambio al prototipo autorizado por Daniel el 22 de noviembre de 2026.
+En desarrollo, la interfaz se sirve con Vite (`npm run dev`); en despliegue va dentro del JAR (ver «Despliegue»). El enlace en la cabecera es un cambio al prototipo autorizado por Daniel el 22 de noviembre de 2026.
+
+## Despliegue
+
+La interfaz y la API se publican juntas, en un solo servicio y bajo la misma dirección. Así la cookie de sesión del administrador es propia del sitio (`SameSite=Lax`) y no depende de cookies de terceros.
+
+### JAR con la interfaz incluida
+
+```powershell
+./mvnw.cmd -Pinterfaz package -DskipTests
+java -jar target/SOLSTITIUM-0.0.1-SNAPSHOT.jar
+```
+
+El perfil `interfaz` descarga Node.js 24 en `target/`, ejecuta `npm ci` y `npm run build` en `frontend/` y copia `frontend/dist` a `static/` dentro del JAR. Spring Boot entrega `index.html` en `/`, `/simulacion/**` y `/admin/**`; `/api/**` no cambia. Cerrar antes cualquier `npm run dev` abierto: en Windows bloquea archivos de `node_modules` y `npm ci` falla con `-4048`. Este mismo JAR sirve como despliegue local de respaldo.
+
+### Render
+
+1. Crear una base PostgreSQL en Render (o en otro proveedor) y anotar su URL interna, usuario y contraseña.
+2. Crear un *Web Service* desde este repositorio, rama `main`, entorno **Docker**. El `Dockerfile` compila con JDK 21 y el perfil `interfaz`, y ejecuta el JAR con JRE 21 limitando el heap a la memoria del plan.
+3. Definir las variables de entorno en el panel de Render, nunca en el repositorio:
+
+| Variable | Valor |
+|---|---|
+| `DB_URL` | `jdbc:postgresql://<host>:5432/<base>` (la URL interna de Render convertida a JDBC) |
+| `DB_USERNAME` | usuario de la base |
+| `DB_PASSWORD` | contraseña de la base; sin ella la aplicación no arranca |
+| `SESSION_COOKIE_SECURE` | `true` |
+
+   Render indica el puerto en `PORT`, que la aplicación ya lee; no hace falta definirlo. Como Render atiende HTTPS y reenvía la petición, `server.forward-headers-strategy=framework` permite a Spring reconocer el esquema original.
+4. En el primer arranque, Flyway crea el esquema y carga los datos de V2.
+5. Crear el administrador desde un equipo del equipo con `scripts/crear-administrador`, con `DB_URL`, `DB_USERNAME` y `DB_PASSWORD` apuntando a la URL **externa** de la base.
+
+En el plan gratuito, el servicio se suspende tras 15 minutos sin tráfico y la primera visita tarda cerca de un minuto en despertarlo; abrirlo antes de una demostración y medir el tiempo de respuesta con el servicio activo. La base gratuita caduca a los 30 días y no tiene copias de seguridad: exportar con `pg_dump` si debe conservarse.
+
+### Aviso de datos de prueba
+
+V2 instala los supuestos de prueba del ERS, no tarifas ni costos reales. Mientras sea así, el simulador y el PDF muestran «Versión de demostración». Cuando se carguen valores reales desde la administración, compilar con `VITE_AVISO_DATOS_PRUEBA=false` (variable de entorno del build en Render) para retirar el aviso.
 
 ## Migraciones y datos iniciales
 

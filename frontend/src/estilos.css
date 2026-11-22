@@ -29,6 +29,8 @@ h2 { font-size: 1.125rem; }
 .enlace-administracion { color: var(--texto-secundario); font-size: .875rem; font-weight: 650; text-underline-offset: .2em; padding-block: .25rem; }
 .enlace-administracion:hover { color: var(--texto); }
 .enlace-administracion:focus-visible { outline: 2px solid var(--violeta); outline-offset: 3px; border-radius: .2rem; }
+.aviso-demostracion { background: color-mix(in srgb, var(--taupe) 22%, var(--porcelana)); border-bottom: 1px solid var(--borde); }
+.aviso-demostracion p { margin-block: 0; padding-block: .55rem; font-size: .85rem; color: var(--texto); }
 .sol { color: var(--violeta); font-size: 1.35em; vertical-align: middle; }
 main { padding-block: 1.65rem 4rem; }
 .pasos { display: flex; flex-wrap: wrap; gap: .6rem 1.6rem; padding: 0; margin: 0 0 1.35rem; list-style: none; }
