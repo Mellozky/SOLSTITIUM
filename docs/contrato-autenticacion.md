@@ -17,7 +17,9 @@ El back-end mantiene la sesión con una cookie HTTP (`JSESSIONID`). La SPA debe 
 
 Las rutas bajo `/api/admin/**` exigen una sesión de administrador. Los usuarios deben
 existir en `administrador`, tener `activo = true` y guardar un hash BCrypt en
-`contrasena_hash`. No se crea ningún administrador con contraseña predeterminada.
+`contrasena_hash`. No se crea ningún administrador con contraseña predeterminada: se crean y se
+restablecen con `scripts/crear-administrador.ps1` o `scripts/crear-administrador.sh` (ver el README).
+El script exige una contraseña de 10 caracteres como mínimo y hasta 72 bytes, el límite de BCrypt.
 
 En local, el origen permitido por CORS es `http://localhost:5173`. En producción se debe
 definir `APP_FRONTEND_ORIGIN`, `SESSION_COOKIE_SAME_SITE=none` y
