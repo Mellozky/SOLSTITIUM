@@ -47,7 +47,7 @@ public class ConfiguracionSeguridad {
                 .cors(cors -> cors.configurationSource(origenCors))
                 .csrf(csrf -> csrf
                         // Cálculo público sin persistencia ni acciones sobre una sesión autenticada.
-                        .ignoringRequestMatchers("/api/simulaciones")
+                        .ignoringRequestMatchers("/api/simulaciones", "/api/simulaciones/promedio-consumo")
                         .csrfTokenRepository(repositorioTokenCsrf)
                         .csrfTokenRequestHandler(manejadorCsrf))
                 .securityContext(contexto -> contexto.securityContextRepository(repositorioContexto))
@@ -57,6 +57,7 @@ public class ConfiguracionSeguridad {
                 .authorizeHttpRequests(autorizacion -> autorizacion
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/simulaciones").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/simulaciones/promedio-consumo").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/autenticacion/csrf").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/autenticacion/iniciar-sesion").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/autenticacion/sesion").authenticated()
