@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { prepararConsumo, revisarConsumo } from './entrada.js';
+import { prepararConsumo, prepararEntradaSimulacion, revisarConsumo, revisarVivienda } from './entrada.js';
 
 const parametros = { consumoMaximo: 2000, umbralAdvertenciaConsumo: 800 };
 
@@ -29,4 +29,21 @@ test('valida meses consecutivos, factura y límites configurados', () => {
     ['3']);
   assert.deepEqual(Object.keys(revisarConsumo(['800', '801', '2000'], '', parametros).advertencias),
     ['1', '2']);
+});
+
+const parametrosVivienda = { estratos: [{ numero: 1 }, { numero: 4 }], areaMinima: 6, areaMaxima: 50 };
+
+test('valida el catálogo de estratos y los extremos inclusivos de área', () => {
+  assert.deepEqual(Object.keys(revisarVivienda(null, '', parametrosVivienda)), ['estrato', 'area']);
+  assert.deepEqual(Object.keys(revisarVivienda(2, '10', parametrosVivienda)), ['estrato']);
+  assert.deepEqual(Object.keys(revisarVivienda(1, '5,99', parametrosVivienda)), ['area']);
+  assert.deepEqual(Object.keys(revisarVivienda(1, '50,01', parametrosVivienda)), ['area']);
+  assert.deepEqual(revisarVivienda(1, '6', parametrosVivienda), {});
+  assert.deepEqual(revisarVivienda(4, '50', parametrosVivienda), {});
+});
+
+test('prepara ambos pasos con los nombres del contrato', () => {
+  const consumo = prepararConsumo(['150', '120'], '75000');
+  assert.deepEqual(prepararEntradaSimulacion(consumo, 4, '30,5'),
+    { consumos: [120, 150], valorFactura: 75000, estrato: 4, areaLibre: 30.5 });
 });

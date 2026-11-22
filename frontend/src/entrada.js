@@ -38,3 +38,22 @@ export function revisarConsumo(meses, factura, parametros) {
 
   return { mesesIngresados: meses.slice(0, ultimo + 1), errores, advertencias };
 }
+
+export function revisarVivienda(estrato, area, parametros) {
+  const errores = {};
+  if (!parametros.estratos.some(({ numero }) => numero === estrato)) {
+    errores.estrato = 'Selecciona el estrato de tu vivienda.';
+  }
+
+  const areaLibre = numeroDecimal(area);
+  if (!area.trim()) {
+    errores.area = 'Ingresa el área libre del techo.';
+  } else if (!(areaLibre >= parametros.areaMinima && areaLibre <= parametros.areaMaxima)) {
+    errores.area = `Ingresa un área entre ${parametros.areaMinima} y ${parametros.areaMaxima} m².`;
+  }
+  return errores;
+}
+
+export function prepararEntradaSimulacion(entradaConsumo, estrato, area) {
+  return { ...entradaConsumo, estrato, areaLibre: numeroDecimal(area) };
+}

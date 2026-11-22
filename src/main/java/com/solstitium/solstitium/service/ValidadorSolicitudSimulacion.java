@@ -3,6 +3,7 @@ package com.solstitium.solstitium.service;
 import com.solstitium.solstitium.exception.DatosSimulacionInvalidosException;
 import com.solstitium.solstitium.model.dto.ConjuntoParametros;
 import com.solstitium.solstitium.model.dto.ParametrosEntradaSimulacion;
+import com.solstitium.solstitium.model.dto.ParametrosEntradaSimulacion.EstratoDisponible;
 import com.solstitium.solstitium.model.dto.SolicitudSimulacion;
 import com.solstitium.solstitium.service.calculo.CalculadoraTarifa;
 import jakarta.validation.Validator;
@@ -43,8 +44,8 @@ public class ValidadorSolicitudSimulacion {
         List<String> advertencias = new ArrayList<>();
         ParametrosEntradaSimulacion parametros = consultarParametrosEntrada(conjunto);
         revisarConsumos(solicitud.getConsumos(), parametros, errores, advertencias);
-        validarArea(solicitud.getAreaLibre(), conjunto, errores);
-        if (conjunto.getEstratos().stream().noneMatch(estrato -> estrato.getNumero() == solicitud.getEstrato())) {
+        validarArea(solicitud.getAreaLibre(), parametros, errores);
+        if (parametros.estratos().stream().noneMatch(estrato -> estrato.numero() == solicitud.getEstrato())) {
             errores.add("El estrato seleccionado no está disponible en la configuración.");
         }
         validarSombra(solicitud, conjunto, errores);
@@ -59,7 +60,17 @@ public class ValidadorSolicitudSimulacion {
         if (maximo.signum() <= 0 || umbral.signum() < 0 || umbral.compareTo(maximo) > 0) {
             throw new IllegalStateException("Los límites de consumo no son coherentes.");
         }
-        return new ParametrosEntradaSimulacion(maximo, umbral);
+        BigDecimal areaMinima = parametro(conjunto, "area_minima");
+        BigDecimal areaMaxima = parametro(conjunto, "area_maxima");
+        if (areaMinima.signum() <= 0 || areaMinima.compareTo(areaMaxima) > 0) {
+            throw new IllegalStateException("Los límites de área no son coherentes.");
+        }
+        var estratos = conjunto.getEstratos().stream()
+                .map(estrato -> new EstratoDisponible(
+                        estrato.getNumero(), estrato.getTipoAjuste().name(), estrato.getPorcentajeAjuste()))
+                .toList();
+        return new ParametrosEntradaSimulacion(maximo, umbral, areaMinima, areaMaxima,
+                parametro(conjunto, "consumo_subsistencia"), estratos);
     }
 
     void validarConsumos(List<BigDecimal> consumos, ParametrosEntradaSimulacion parametros) {
@@ -81,15 +92,10 @@ public class ValidadorSolicitudSimulacion {
         }
     }
 
-    private void validarArea(BigDecimal area, ConjuntoParametros conjunto, List<String> errores) {
-        BigDecimal areaMinima = parametro(conjunto, "area_minima");
-        BigDecimal areaMaxima = parametro(conjunto, "area_maxima");
-        if (areaMinima.signum() <= 0 || areaMinima.compareTo(areaMaxima) > 0) {
-            throw new IllegalStateException("Los límites de área no son coherentes.");
-        }
-        if (area.compareTo(areaMinima) < 0 || area.compareTo(areaMaxima) > 0) {
-            errores.add("El área libre debe estar entre " + areaMinima.toPlainString()
-                    + " y " + areaMaxima.toPlainString() + " m².");
+    private void validarArea(BigDecimal area, ParametrosEntradaSimulacion parametros, List<String> errores) {
+        if (area.compareTo(parametros.areaMinima()) < 0 || area.compareTo(parametros.areaMaxima()) > 0) {
+            errores.add("El área libre debe estar entre " + parametros.areaMinima().toPlainString()
+                    + " y " + parametros.areaMaxima().toPlainString() + " m².");
         }
     }
 

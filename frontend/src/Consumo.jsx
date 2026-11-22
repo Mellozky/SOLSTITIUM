@@ -68,7 +68,7 @@ export function Consumo({ meses, factura, cambiarMeses, cambiarFactura, parametr
     <div className="distribucion-consumo">
       <form className="tarjeta" ref={formulario} onSubmit={continuar} noValidate>
         <p className="etapa">Paso 1 de 3</p>
-        <h1>¿Cuánta energía consume tu hogar?</h1>
+        <h1 tabIndex={-1}>¿Cuánta energía consume tu hogar?</h1>
         <p>Copia de tu factura el consumo en kWh de los últimos meses. Con un mes basta. Con más meses, el promedio es más representativo.</p>
         <div className="meses">
           {meses.map((valor, indice) => {

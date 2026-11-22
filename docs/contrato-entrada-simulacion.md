@@ -27,7 +27,9 @@ Los DTO siguen la figura 5 del ERS y no se guardan en tablas.
 
 Con V2: 800 kWh no advierte, 801 y 2000 sí; 2001 se rechaza. Área 5 y 500 m² se acepta; 4,99 y 500,01 se rechazan. Estos límites salen de `parametro`, no de las anotaciones.
 
-La interfaz consulta `GET /api/simulaciones/parametros-entrada` para obtener `consumoMaximo` y `umbralAdvertenciaConsumo` desde la base. Para mostrar el promedio sin completar la simulación, envía únicamente `{"consumos":[120,150]}` a `POST /api/simulaciones/promedio-consumo`, que devuelve el promedio como un número JSON (135 en el ejemplo). Ambas rutas son públicas. El promedio valida los consumos con el máximo vigente.
+La interfaz consulta `GET /api/simulaciones/parametros-entrada` para obtener `consumoMaximo`, `umbralAdvertenciaConsumo`, `areaMinima`, `areaMaxima`, `consumoSubsistencia` y los `estratos` disponibles desde la base. Cada estrato incluye `numero`, `tipoAjuste` y `porcentajeAjuste`. Para mostrar el promedio sin completar la simulación, envía únicamente `{"consumos":[120,150]}` a `POST /api/simulaciones/promedio-consumo`, que devuelve el promedio como un número JSON (135 en el ejemplo). Ambas rutas son públicas. El promedio valida los consumos con el máximo vigente.
+
+El formulario conserva en memoria los datos de Consumo y Vivienda y techo al navegar entre ambos pasos. Estos campos preparan el cuerpo de la simulación, que se podrá enviar cuando se incorporen las respuestas de Sombra.
 
 `SolicitudSimulacion.consumoPromedio()` usa `BigDecimal` y `MathContext.DECIMAL128` para la división. Se llama después de validar; no redondea los consumos a enteros ni calcula la tarifa.
 

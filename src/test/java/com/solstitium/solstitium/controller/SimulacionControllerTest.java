@@ -41,11 +41,15 @@ class SimulacionControllerTest {
     }
 
     @Test
-    void consultaLimitesDeConsumoSinSesion() throws Exception {
+    void consultaParametrosDeEntradaSinSesion() throws Exception {
         cliente.perform(get("/api/simulaciones/parametros-entrada"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.consumoMaximo").value(2000))
-                .andExpect(jsonPath("$.umbralAdvertenciaConsumo").value(800));
+                .andExpect(jsonPath("$.umbralAdvertenciaConsumo").value(800))
+                .andExpect(jsonPath("$.areaMinima").value(5))
+                .andExpect(jsonPath("$.areaMaxima").value(500))
+                .andExpect(jsonPath("$.estratos.length()").value(6))
+                .andExpect(jsonPath("$.estratos[0].tipoAjuste").value("SUBSIDIO"));
     }
 
     @Test
