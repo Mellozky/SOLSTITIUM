@@ -1,0 +1,58 @@
+.ingreso-admin, .cabecera-admin { background: var(--texto); color: var(--porcelana); }
+.ingreso-admin { min-height: 100dvh; display: grid; place-items: center; padding: 1rem; }
+.ingreso-admin form { width: min(100%, 24rem); color: var(--texto); }
+.ingreso-admin h1 { font-size: 1.55rem; margin-block: .65rem 1rem; }
+.ingreso-admin input {
+  display: block;
+  width: 100%;
+  padding: .55rem .65rem;
+  margin-bottom: .85rem;
+  border: 1px solid var(--borde);
+  border-radius: .45rem;
+  background: var(--superficie);
+  color: var(--texto);
+}
+.ingreso-admin button { width: 100%; }
+.ingreso-admin form > small:last-child { display: block; text-align: center; margin-top: .65rem; }
+.cabecera-admin button {
+  margin-inline-start: .8rem;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  text-decoration: underline;
+  padding: .35rem;
+}
+.distribucion-admin {
+  display: grid;
+  grid-template-columns: 14rem minmax(0, 1fr);
+  align-items: start;
+  gap: 1rem;
+  padding-block: 1rem 3rem;
+}
+.contenido-admin { padding: 0; min-width: 0; }
+.menu-admin { display: grid; gap: .2rem; padding: .55rem; }
+.menu-admin a { padding: .45rem .6rem; color: var(--texto); text-decoration: none; border-radius: .35rem; }
+.menu-admin a[aria-current] { background: var(--enfasis); font-weight: 700; }
+.menu-admin a:hover { text-decoration: underline; }
+.distribucion-admin a:focus-visible, .desplazamiento-tabla:focus-visible, .ingreso-admin input:focus-visible {
+  outline: 2px solid var(--violeta);
+  outline-offset: 2px;
+}
+.bloque-admin { margin-bottom: .85rem; padding: .85rem; }
+.bloque-admin p { margin: 0; }
+.titulo-bloque { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: .25rem .75rem; }
+.bloque-admin a, .contenido-admin .aviso a { color: var(--violeta); }
+.desplazamiento-tabla { overflow-x: auto; }
+.desplazamiento-tabla table { border-collapse: collapse; width: 100%; font-size: .875rem; }
+.desplazamiento-tabla th, .desplazamiento-tabla td {
+  padding: .6rem;
+  border-bottom: 1px solid var(--borde);
+  text-align: start;
+  white-space: nowrap;
+}
+.desplazamiento-tabla tbody tr:last-child td { border-bottom: 0; }
+
+@media (max-width: 740px) {
+  .distribucion-admin { grid-template-columns: minmax(0, 1fr); }
+  .menu-admin { grid-template-columns: repeat(2, minmax(0, 1fr)); font-size: .85rem; }
+}

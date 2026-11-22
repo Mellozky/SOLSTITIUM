@@ -3,6 +3,9 @@ import { Consumo } from './Consumo.jsx';
 import { Vivienda } from './Vivienda.jsx';
 import { Resultados } from './Resultados.jsx';
 import { MAXIMO_MESES, prepararEntradaSimulacion } from './entrada.js';
+import { usarRutaSimulacion } from './rutasSimulacion.js';
+import { solicitarJson } from './clienteApi.js';
+import { MensajeApi } from './MensajeApi.jsx';
 
 const pasos = ['Consumo', 'Vivienda y techo', 'Sombra', 'Resultados'];
 
@@ -10,38 +13,40 @@ export function Simulador() {
   const [meses, cambiarMeses] = useState(() => Array(MAXIMO_MESES).fill(''));
   const [factura, cambiarFactura] = useState('');
   const [parametros, cambiarParametros] = useState(null);
-  const [estadoCarga, cambiarEstadoCarga] = useState('cargando');
+  const [errorCarga, cambiarErrorCarga] = useState(null);
   const [intento, cambiarIntento] = useState(0);
-  const [paso, cambiarPaso] = useState(0);
   const [estrato, cambiarEstrato] = useState(null);
   const [area, cambiarArea] = useState('');
   const [entradaConsumo, cambiarEntradaConsumo] = useState(null);
   const [entradaPreparada, cambiarEntradaPreparada] = useState(null);
   const [resultado, cambiarResultado] = useState(null);
+  const [paso, cambiarPaso] = usarRutaSimulacion(
+    resultado ? 3 : entradaPreparada ? 2 : entradaConsumo ? 1 : 0);
   const contenido = useRef(null);
   const pasoAnterior = useRef(paso);
 
   useEffect(() => {
     const control = new AbortController();
-    fetch('/api/simulaciones/parametros-entrada', { signal: control.signal, cache: 'no-store' })
-      .then((respuesta) => {
-        if (!respuesta.ok) throw new Error();
-        return respuesta.json();
-      })
+    solicitarJson('simulaciones/parametros-entrada', { signal: control.signal })
       .then((datos) => {
-        cambiarParametros(datos);
-        cambiarEstadoCarga('lista');
+        if (!control.signal.aborted) cambiarParametros(datos);
       })
-      .catch(() => {
-        if (!control.signal.aborted) cambiarEstadoCarga('error');
+      .catch((error) => {
+        if (!control.signal.aborted) cambiarErrorCarga(error);
       });
     return () => control.abort();
   }, [intento]);
 
-  // Para el paso de sombra: enviar con solicitarSimulacion (simulacion.js) y pasar aquí la respuesta.
+  // Para el paso de sombra: enviar con solicitarJson('simulaciones', { datos }) y pasar aquí la respuesta.
   function mostrarResultado(respuesta) {
     cambiarResultado(respuesta);
     cambiarPaso(3);
+  }
+
+  // Cualquier cambio en los datos invalida la entrada preparada y el resultado anterior.
+  function descartarCalculos() {
+    cambiarEntradaPreparada(null);
+    cambiarResultado(null);
   }
 
   function reiniciar() {
@@ -50,8 +55,7 @@ export function Simulador() {
     cambiarEstrato(null);
     cambiarArea('');
     cambiarEntradaConsumo(null);
-    cambiarEntradaPreparada(null);
-    cambiarResultado(null);
+    descartarCalculos();
     cambiarPaso(0);
   }
 
@@ -79,25 +83,37 @@ export function Simulador() {
             ))}
           </ol>
         </nav>
-        {estadoCarga === 'error' && (
+        {errorCarga && (
           <div className="aviso" role="alert">
-            No pudimos cargar los parámetros de la simulación.
-            {' '}
+            <MensajeApi error={errorCarga} />
             <button type="button" onClick={() => {
-              cambiarEstadoCarga('cargando');
+              cambiarErrorCarga(null);
               cambiarIntento(intento + 1);
             }}>Reintentar</button>
           </div>
         )}
         {paso === 0 && (
-          <Consumo meses={meses} factura={factura} cambiarMeses={cambiarMeses}
-            cambiarFactura={cambiarFactura} parametros={parametros} alContinuar={(datos) => {
+          <Consumo meses={meses} factura={factura} cambiarMeses={(valores) => {
+            cambiarMeses(valores);
+            cambiarEntradaConsumo(null);
+            descartarCalculos();
+          }} cambiarFactura={(valor) => {
+            cambiarFactura(valor);
+            cambiarEntradaConsumo(null);
+            descartarCalculos();
+          }} parametros={parametros} alContinuar={(datos) => {
               cambiarEntradaConsumo(datos);
               cambiarPaso(1);
             }} />
         )}
         {paso === 1 && (
-          <Vivienda estrato={estrato} area={area} cambiarEstrato={cambiarEstrato} cambiarArea={cambiarArea}
+          <Vivienda estrato={estrato} area={area} cambiarEstrato={(valor) => {
+            cambiarEstrato(valor);
+            descartarCalculos();
+          }} cambiarArea={(valor) => {
+            cambiarArea(valor);
+            descartarCalculos();
+          }}
             parametros={parametros} alRegresar={() => cambiarPaso(0)} alContinuar={() => {
               cambiarEntradaPreparada(prepararEntradaSimulacion(entradaConsumo, estrato, area));
               cambiarPaso(2);
