@@ -1,0 +1,21 @@
+.edicion-parametros fieldset { border: 0; padding: 0; margin: 0; min-inline-size: 0; }
+.edicion-parametros .solo-lectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.acciones-edicion-parametros { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .75rem; margin-block: 0 1rem; }
+.edicion-parametros th small, .edicion-parametros td small { display: block; font-weight: normal; }
+.edicion-parametros th label { margin: 0; }
+.edicion-parametros input:not([type="checkbox"]) {
+  width: 8rem;
+  padding: .4rem .5rem;
+  color: var(--texto);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: .35rem;
+}
+.edicion-parametros input:focus-visible { outline: 2px solid var(--violeta); outline-offset: 2px; }
+.edicion-parametros [aria-invalid="true"] { border-color: var(--violeta); }
