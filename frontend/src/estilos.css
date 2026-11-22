@@ -94,6 +94,42 @@ figcaption { font-size: .77rem; margin-top: .35rem; color: var(--texto-secundari
 .acciones-navegacion { justify-content: space-between; align-items: center; flex-wrap: wrap; }
 .regresar { color: var(--violeta); font-weight: 650; padding: .55rem .25rem; border: 0; background: transparent; }
 
+.introduccion-sombra { max-width: 43rem; }
+.fila-sombra { display: grid; grid-template-columns: 12rem minmax(0, 1fr); align-items: center; gap: .65rem 1rem; padding: .9rem; margin-bottom: 1rem; }
+.fila-sombra[aria-invalid=true] { border-color: var(--violeta); }
+.franja-sombra { display: flex; align-items: center; gap: .7rem; }
+.franja-sombra h2 { font-size: .98rem; margin: 0; }
+.franja-sombra small { color: var(--texto-secundario); }
+.sol-franja { display: flex; align-items: center; justify-content: center; flex: 0 0 2.4rem; height: 2.4rem; padding: .3rem; border-radius: .4rem; color: var(--violeta); background: var(--enfasis); font-size: 1.25rem; }
+.sol-franja-0 { justify-content: flex-start; }
+.sol-franja-2 { justify-content: flex-end; }
+.opciones-sombra { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr)); gap: .65rem; }
+.opcion-sombra { position: relative; display: flex; margin: 0; }
+.opcion-sombra input { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.contenido-opcion-sombra { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: .45rem; padding: .65rem .35rem; min-height: 5.75rem; border: 1px solid var(--borde); border-radius: .5rem; text-align: center; font-size: .8rem; line-height: 1.3; }
+.opcion-sombra input:checked + span { border-color: var(--violeta); box-shadow: inset 0 0 0 1px var(--violeta); background: var(--enfasis); font-weight: 750; }
+.opcion-sombra input:focus-visible + span { outline: 2px solid var(--violeta); outline-offset: 3px; }
+.opcion-sombra input:disabled { cursor: default; }
+.dibujo-sombra { position: relative; width: 4.4rem; height: 2.6rem; border: 1px solid var(--borde); border-radius: .3rem; overflow: hidden; background: var(--porcelana); }
+.dibujo-sombra::before { content: ''; position: absolute; inset: 0 auto auto 0; background: var(--taupe); }
+.opcion-sombra:nth-child(2) .dibujo-sombra::before { width: 30%; height: 36%; }
+.opcion-sombra:nth-child(3) .dibujo-sombra::before { width: 25%; height: 100%; }
+.opcion-sombra:nth-child(4) .dibujo-sombra::before { width: 50%; height: 100%; }
+.error-franja, .error-envio-sombra { grid-column: 1 / -1; }
+.cierre-sombra { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: .75rem 1.5rem; padding: 1rem; }
+.cierre-sombra strong { display: block; font-size: 1.2rem; color: var(--violeta); }
+.botones-sombra { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem; }
+.error-envio-sombra { margin: 0; }
+
+@media (max-width: 900px) {
+  .fila-sombra { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .opciones-sombra { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cierre-sombra { grid-template-columns: 1fr; }
+  .botones-sombra { justify-content: space-between; }
+}
+
 /* Resultados (paso 4): violeta para la recomendación y las acciones, taupe para lo secundario. */
 .resultados { display: grid; gap: 1.25rem; }
 .encabezado-resultado { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.25rem 2rem; padding: clamp(1.25rem, 4vw, 2.25rem); border-radius: 1rem; background: var(--violeta); color: white; }

@@ -53,6 +53,55 @@ class SimulacionControllerTest {
     }
 
     @Test
+    void consultaCatalogoPublicoDeSombraEnElOrdenConfigurado() throws Exception {
+        String[][] franjasEsperadas = {
+                {"Mañana", "06:00:00", "10:00:00"},
+                {"Mediodía", "10:00:00", "14:00:00"},
+                {"Tarde", "14:00:00", "18:00:00"}
+        };
+        String[] porcionesEsperadas = {"Nada", "Un borde o una esquina", "Cerca de una cuarta parte", "La mitad o más"};
+        var respuesta = cliente.perform(get("/api/simulaciones/parametros-entrada"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.franjas.length()").value(franjasEsperadas.length))
+                .andExpect(jsonPath("$.porciones.length()").value(porcionesEsperadas.length));
+        for (int indice = 0; indice < franjasEsperadas.length; indice++) {
+            String ruta = "$.franjas[" + indice + "]";
+            respuesta.andExpect(jsonPath(ruta + ".id").value(indice + 1))
+                    .andExpect(jsonPath(ruta + ".nombre").value(franjasEsperadas[indice][0]))
+                    .andExpect(jsonPath(ruta + ".horaInicio").value(franjasEsperadas[indice][1]))
+                    .andExpect(jsonPath(ruta + ".horaFin").value(franjasEsperadas[indice][2]))
+                    .andExpect(jsonPath(ruta + ".peso").doesNotExist());
+        }
+        for (int indice = 0; indice < porcionesEsperadas.length; indice++) {
+            String ruta = "$.porciones[" + indice + "]";
+            respuesta.andExpect(jsonPath(ruta + ".id").value(indice + 1))
+                    .andExpect(jsonPath(ruta + ".etiqueta").value(porcionesEsperadas[indice]))
+                    .andExpect(jsonPath(ruta + ".valor").doesNotExist());
+        }
+    }
+
+    @Test
+    void muestraElTramoDeCp04SinSolicitarUnaSimulacionCompleta() throws Exception {
+        cliente.perform(post("/api/simulaciones/vista-previa-sombra").contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"respuestasSombra":[{"franjaId":1,"porcionId":2},
+                                {"franjaId":2,"porcionId":2},{"franjaId":3,"porcionId":3}]}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tramo").value("Alta"));
+    }
+
+    @Test
+    void rechazaLaVistaPreviaSiFaltaUnaFranja() throws Exception {
+        cliente.perform(post("/api/simulaciones/vista-previa-sombra").contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"respuestasSombra":[{"franjaId":1,"porcionId":1},{"franjaId":2,"porcionId":1}]}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errores[0]").value("Debe responder una vez cada franja de sombra configurada."));
+    }
+
+    @Test
     void calculaPromedioSinFacturaSombraNiSesion() throws Exception {
         cliente.perform(post("/api/simulaciones/promedio-consumo").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"consumos\":[120,150]}"))
