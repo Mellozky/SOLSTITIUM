@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { solicitarJson } from './clienteApi.js';
 import { MensajeApi } from './MensajeApi.jsx';
+import { EdicionParametros } from './EdicionParametros.jsx';
 
 const numero = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 4 });
 const nombres = {
@@ -78,24 +79,22 @@ function Bitacora({ registros, reciente = false }) {
 }
 
 function Tarifas({ datos, bitacora }) {
-  const tipos = {
-    subsidio: ['Subsidio', 'Consumo de subsistencia'],
-    contribucion: ['Contribución', 'Todo el consumo'],
-  };
-  const filas = datos.registros.filter(({ tabla }) => tabla === 'estrato').map((registro) => {
-    const { registroId, valores } = registro;
-    const [tipo, aplica] = tipos[valores.tipo_ajuste] ?? ['Ninguno', 'No aplica'];
-    const limite = limiteDe(datos, registro, 'porcentaje_ajuste');
-    return [registroId, registroId, tipo, `${presentar(valores.porcentaje_ajuste)} %`, aplica,
-      limite ? `${presentar(limite.valorMinimo)}–${presentar(limite.valorMaximo)} %` : '—'];
-  });
+  const [actualizada, cambiarActualizada] = useState(null);
+  const historial = actualizada ?? bitacora;
+
+  async function actualizarBitacora() {
+    try {
+      cambiarActualizada({ registros: await solicitarJson('admin/bitacora') });
+    } catch (error) {
+      cambiarActualizada({ error });
+    }
+  }
+
   return <>
-    <ParametrosGenerales titulo="Tarifa general" datos={datos} />
-    <Tabla titulo="Subsidio o contribución por estrato"
-      columnas={['Estrato', 'Tipo de ajuste', 'Porcentaje', 'Se aplica sobre', 'Rango permitido']} filas={filas} />
-    {bitacora.error
-      ? <div role="alert" className="aviso"><MensajeApi error={bitacora.error} /></div>
-      : <Bitacora registros={bitacora.registros.slice(0, 3)} reciente />}
+    <EdicionParametros datos={datos} seccion="tarifas" alGuardar={actualizarBitacora} />
+    {historial.error
+      ? <div role="alert" className="aviso"><MensajeApi error={historial.error} /></div>
+      : <Bitacora registros={historial.registros.slice(0, 3)} reciente />}
   </>;
 }
 
@@ -106,27 +105,8 @@ function Paneles({ paneles }) {
 }
 
 function OtrosParametros({ datos, seccion }) {
-  if (seccion === 'limites' || seccion === 'tecnicos') {
-    return <ParametrosGenerales datos={datos} titulo={seccion === 'limites' ? 'Límites operativos' : 'Valores técnicos'} />;
-  }
-  if (seccion === 'rangos') {
-    return <Tabla titulo="Clasificaciones" columnas={['Clasificación', 'Años mínimos', 'Años máximos']}
-      filas={datos.registros.filter(({ tabla }) => tabla === 'rango_viabilidad').map(({ registroId, valores }) => [
-        registroId, valores.clasificacion, presentar(valores.anios_minimo),
-        valores.anios_maximo == null ? 'Sin límite' : presentar(valores.anios_maximo),
-      ])} />;
-  }
-  const registros = datos.registros.filter(({ tabla }) => tabla !== 'parametro');
-  return <>
-    {datos.registros.some(({ tabla }) => tabla === 'parametro') && <ParametrosGenerales datos={datos} titulo="Parámetros generales" />}
-    <Tabla titulo="Configuración vigente" columnas={['Registro', 'Campo', 'Valor']}
-      filas={registros.flatMap((registro) => Object.entries(registro.valores).map(([campo, valor]) => [
-        `${registro.tabla}-${registro.registroId}-${campo}`,
-        registro.valores.nombre ?? registro.valores.etiqueta ?? registro.valores.clasificacion
-          ?? `${etiqueta(registro.tabla)} ${registro.registroId}`,
-        etiqueta(campo), presentar(valor),
-      ]))} />
-  </>;
+  if (seccion === 'limites') return <ParametrosGenerales datos={datos} titulo="Límites operativos" />;
+  return <EdicionParametros key={seccion} datos={datos} seccion={seccion} />;
 }
 
 export function ContenidoAdministracion({ seccion }) {
