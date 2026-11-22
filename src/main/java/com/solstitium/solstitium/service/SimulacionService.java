@@ -5,7 +5,9 @@ import com.solstitium.solstitium.model.dto.FactorSombra;
 import com.solstitium.solstitium.model.dto.ParametrosEntradaSimulacion;
 import com.solstitium.solstitium.model.dto.ResultadoConfiguracion;
 import com.solstitium.solstitium.model.dto.ResultadoSimulacion;
+import com.solstitium.solstitium.model.dto.RespuestaSombra;
 import com.solstitium.solstitium.model.dto.SolicitudSimulacion;
+import com.solstitium.solstitium.model.dto.VistaPreviaSombra;
 import com.solstitium.solstitium.repository.ParametroRepository;
 import com.solstitium.solstitium.service.calculo.CalculadoraFinanciera;
 import com.solstitium.solstitium.service.calculo.CalculadoraSombra;
@@ -40,6 +42,12 @@ public class SimulacionService {
         SolicitudSimulacion solicitud = new SolicitudSimulacion();
         solicitud.setConsumos(consumos);
         return solicitud.consumoPromedio();
+    }
+
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public VistaPreviaSombra consultarVistaPreviaSombra(List<RespuestaSombra> respuestas) {
+        FactorSombra sombra = calculadoraSombra.calcularFactor(respuestas, repositorio.obtenerParametros());
+        return new VistaPreviaSombra(sombra.getTramo().getNombre());
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)

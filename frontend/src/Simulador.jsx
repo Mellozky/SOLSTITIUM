@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Consumo } from './Consumo.jsx';
 import { Vivienda } from './Vivienda.jsx';
+import { Sombra } from './Sombra.jsx';
 import { Resultados } from './Resultados.jsx';
 import { MAXIMO_MESES, prepararEntradaSimulacion } from './entrada.js';
 import { usarRutaSimulacion } from './rutasSimulacion.js';
@@ -19,6 +20,7 @@ export function Simulador() {
   const [area, cambiarArea] = useState('');
   const [entradaConsumo, cambiarEntradaConsumo] = useState(null);
   const [entradaPreparada, cambiarEntradaPreparada] = useState(null);
+  const [seleccionesSombra, cambiarSeleccionesSombra] = useState({});
   const [resultado, cambiarResultado] = useState(null);
   const [paso, cambiarPaso] = usarRutaSimulacion(
     resultado ? 3 : entradaPreparada ? 2 : entradaConsumo ? 1 : 0);
@@ -37,8 +39,12 @@ export function Simulador() {
     return () => control.abort();
   }, [intento]);
 
-  // Para el paso de sombra: enviar con solicitarJson('simulaciones', { datos }) y pasar aquí la respuesta.
-  function mostrarResultado(respuesta) {
+  async function simular(respuestasSombra, signal) {
+    const respuesta = await solicitarJson('simulaciones', {
+      datos: { ...entradaPreparada, respuestasSombra },
+      signal,
+    });
+    if (signal.aborted) return;
     cambiarResultado(respuesta);
     cambiarPaso(3);
   }
@@ -54,6 +60,7 @@ export function Simulador() {
     cambiarFactura('');
     cambiarEstrato(null);
     cambiarArea('');
+    cambiarSeleccionesSombra({});
     cambiarEntradaConsumo(null);
     descartarCalculos();
     cambiarPaso(0);
@@ -119,22 +126,16 @@ export function Simulador() {
               cambiarPaso(2);
             }} />
         )}
-        {paso === 2 && entradaPreparada && <SombraPendiente alRegresar={() => cambiarPaso(1)} />}
+        {paso === 2 && entradaPreparada && (
+          <Sombra franjas={parametros.franjas} porciones={parametros.porciones}
+            selecciones={seleccionesSombra} alElegir={(franjaId, porcionId) => {
+              cambiarSeleccionesSombra((selecciones) => ({ ...selecciones, [franjaId]: porcionId }));
+              cambiarResultado(null);
+            }}
+            alRegresar={() => cambiarPaso(1)} alSimular={simular} />
+        )}
         {paso === 3 && resultado && <Resultados resultado={resultado} alReiniciar={reiniciar} />}
       </main>
     </>
-  );
-}
-
-function SombraPendiente({ alRegresar }) {
-  return (
-    <section className="tarjeta">
-      <p className="etapa">Paso 3 de 3</p>
-      <h1 tabIndex={-1}>Sombra</h1>
-      <p>Este paso está en desarrollo. Puedes regresar para revisar tus datos de consumo y vivienda.</p>
-      <footer className="acciones acciones-navegacion">
-        <button type="button" className="regresar" onClick={alRegresar}>← Atrás</button>
-      </footer>
-    </section>
   );
 }

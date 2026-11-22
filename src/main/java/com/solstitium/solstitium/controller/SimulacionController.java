@@ -3,6 +3,8 @@ package com.solstitium.solstitium.controller;
 import com.solstitium.solstitium.model.dto.ParametrosEntradaSimulacion;
 import com.solstitium.solstitium.model.dto.ResultadoSimulacion;
 import com.solstitium.solstitium.model.dto.SolicitudPromedioConsumo;
+import com.solstitium.solstitium.model.dto.SolicitudVistaPreviaSombra;
+import com.solstitium.solstitium.model.dto.VistaPreviaSombra;
 import com.solstitium.solstitium.model.dto.SolicitudSimulacion;
 import com.solstitium.solstitium.service.SimulacionService;
 import jakarta.validation.Valid;
@@ -34,5 +36,10 @@ public class SimulacionController {
     @PostMapping("/promedio-consumo")
     public BigDecimal calcularPromedioConsumo(@Valid @RequestBody SolicitudPromedioConsumo solicitud) {
         return servicio.calcularPromedioConsumo(solicitud.consumos());
+    }
+
+    @PostMapping("/vista-previa-sombra")
+    public VistaPreviaSombra consultarVistaPreviaSombra(@Valid @RequestBody SolicitudVistaPreviaSombra solicitud) {
+        return servicio.consultarVistaPreviaSombra(solicitud.respuestasSombra());
     }
 }

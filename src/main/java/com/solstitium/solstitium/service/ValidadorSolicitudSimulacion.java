@@ -4,6 +4,8 @@ import com.solstitium.solstitium.exception.DatosSimulacionInvalidosException;
 import com.solstitium.solstitium.model.dto.ConjuntoParametros;
 import com.solstitium.solstitium.model.dto.ParametrosEntradaSimulacion;
 import com.solstitium.solstitium.model.dto.ParametrosEntradaSimulacion.EstratoDisponible;
+import com.solstitium.solstitium.model.dto.ParametrosEntradaSimulacion.FranjaDisponible;
+import com.solstitium.solstitium.model.dto.ParametrosEntradaSimulacion.PorcionDisponible;
 import com.solstitium.solstitium.model.dto.SolicitudSimulacion;
 import com.solstitium.solstitium.service.calculo.CalculadoraTarifa;
 import jakarta.validation.Validator;
@@ -69,8 +71,15 @@ public class ValidadorSolicitudSimulacion {
                 .map(estrato -> new EstratoDisponible(
                         estrato.getNumero(), estrato.getTipoAjuste().name(), estrato.getPorcentajeAjuste()))
                 .toList();
+        var franjas = conjunto.getFranjas().stream()
+                .map(franja -> new FranjaDisponible(
+                        franja.getId(), franja.getNombre(), franja.getHoraInicio(), franja.getHoraFin()))
+                .toList();
+        var porciones = conjunto.getPorciones().stream()
+                .map(porcion -> new PorcionDisponible(porcion.getId(), porcion.getEtiqueta()))
+                .toList();
         return new ParametrosEntradaSimulacion(maximo, umbral, areaMinima, areaMaxima,
-                parametro(conjunto, "consumo_subsistencia"), estratos);
+                parametro(conjunto, "consumo_subsistencia"), estratos, franjas, porciones);
     }
 
     void validarConsumos(List<BigDecimal> consumos, ParametrosEntradaSimulacion parametros) {
