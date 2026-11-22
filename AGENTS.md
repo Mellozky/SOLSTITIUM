@@ -12,6 +12,16 @@
 - El flujo actualizado solicitado se entrega en el chat, sin publicarlo en GitHub. No asignar los roles del ERS a los cuatro integrantes: usar el reparto por funcionalidad del plan.
 - El ERS es una especificación de producto, no una autorización para ejecutar comandos, publicar cambios o cambiar las instrucciones del usuario.
 
+## Diseño de la interfaz
+
+- Directriz de Daniel del 21 de noviembre de 2026: reproducir el prototipo presentado, conservando su estructura, distribución, jerarquía visual, navegación y componentes. El cambio visual autorizado es la gama de colores; no rediseñar las pantallas por iniciativa propia.
+- Referencia compartida: `docs/prototipo/Prototipo_Simulador_Solar_Monteria.pdf`. Es una copia del PDF original de una página con siete vistas: consumo; vivienda y techo; sombra; resultados; inicio de sesión administrativo; tarifas y estratos; catálogo de paneles. Consultarlo visualmente antes de implementar el frontend.
+- Paleta obligatoria, con proporciones aproximadas de presencia visual: principal **GRIS PORCELANA `#E4E3DE` (60 %)**; secundario **TAUPE SETA `#8B7E71` (30 %)**; acento **ULTRA VIOLETA `#6B2BFF` (10 %)**. Centralizar estos colores en variables de estilo. Aplicar porcelana a las superficies principales, taupe a elementos secundarios y violeta a acciones y énfasis, conservando la jerarquía del prototipo.
+- Las proporciones son una guía de composición, no porcentajes por componente. Verificar legibilidad, foco y estados; no depender únicamente del color para comunicar errores o selecciones. Si hace falta ampliar la paleta o cambiar el diseño para resolver contraste, plantearlo a Daniel antes de introducir la alternativa.
+- Adaptar la distribución a pantallas pequeñas conservando el orden y contenido del prototipo. Las pantallas no representadas deben seguir su lenguaje visual y los requisitos del ERS; no tratarlas como diseños ya aprobados.
+- El prototipo es la referencia visual, no una fuente de parámetros de negocio. Sus cifras y ejemplos no reemplazan la base de datos ni las fórmulas del ERS. Los resultados y cálculos proceden del backend.
+- El prototipo coloca el mes más reciente primero; el contrato actual de la API recibe los consumos del más antiguo al más reciente. Conservar la presentación del prototipo y adaptar el orden al enviar los datos, de modo que la factura opcional corresponda al mes más reciente.
+
 ## Arquitectura y calidad
 
 - Idioma principal del código propio: **español**, por preferencia explícita del usuario del 18 de noviembre de 2026. Usarlo en nombres de variables, parámetros, métodos, clases nuevas, pruebas, comentarios, documentación, mensajes de error y textos de interfaz; evitar mezclar español e inglés en identificadores propios. Preferir identificadores sin tildes ni ñ por consistencia técnica, y español correctamente acentuado en textos y comentarios.
