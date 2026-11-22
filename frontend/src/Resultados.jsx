@@ -1,9 +1,23 @@
+import { useState } from 'react';
 import { prepararResultados } from './resultados.js';
+import { descargarResumenPdf } from './resumenPdf.js';
 
 /** Paso 4: muestra los resultados que calculó el back-end, sin repetir ningún cálculo. */
 export function Resultados({ resultado, alReiniciar }) {
   const vista = prepararResultados(resultado);
   const { encabezado } = vista;
+  const [estadoPdf, cambiarEstadoPdf] = useState('listo');
+
+  // CU-05: el PDF se arma en el navegador; si falla, los resultados siguen en pantalla (flujo A1).
+  async function descargarPdf() {
+    cambiarEstadoPdf('generando');
+    try {
+      await descargarResumenPdf(resultado);
+      cambiarEstadoPdf('listo');
+    } catch {
+      cambiarEstadoPdf('error');
+    }
+  }
 
   return (
     <article className="resultados" aria-labelledby="titulo-resultados">
@@ -61,7 +75,15 @@ export function Resultados({ resultado, alReiniciar }) {
         <p>Esta es una estimación y no una cotización. No incluye venta de excedentes, degradación de los paneles ni costo de financiación.</p>
         <div className="acciones-resultados">
           <button type="button" className="secundario" onClick={alReiniciar}>Nueva simulación</button>
+          <button type="button" className="principal" onClick={descargarPdf} disabled={estadoPdf === 'generando'}>
+            <span aria-hidden="true">⤓</span> {estadoPdf === 'generando' ? 'Generando PDF…' : 'Descargar PDF'}
+          </button>
         </div>
+        {estadoPdf === 'error' && (
+          <p className="aviso error-pdf" role="alert">
+            No pudimos generar el PDF. Tus resultados siguen en pantalla; inténtalo de nuevo.
+          </p>
+        )}
       </footer>
     </article>
   );

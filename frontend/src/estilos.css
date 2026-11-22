@@ -181,6 +181,7 @@ figcaption { font-size: .77rem; margin-top: .35rem; color: var(--texto-secundari
 .cierre-resultados { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem 2rem; padding-top: 1.25rem; border-top: 1px solid var(--borde); }
 .cierre-resultados p { flex: 1 1 22rem; max-width: 34rem; margin: 0; font-size: .85rem; }
 .acciones-resultados { display: flex; flex-wrap: wrap; gap: .75rem; }
+.error-pdf { flex-basis: 100%; margin: 0; color: var(--texto); font-weight: 650; }
 .secundario { background: var(--superficie); color: var(--violeta); border: 1px solid var(--violeta); padding: .6rem 1rem; border-radius: .5rem; font-weight: 650; }
 
 @media (max-width: 820px) {

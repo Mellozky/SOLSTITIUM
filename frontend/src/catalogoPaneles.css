@@ -1,0 +1,11 @@
+.barra-catalogo, .acciones-panel { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
+.barra-catalogo { justify-content: space-between; margin-bottom: .75rem; }
+.barra-catalogo p { margin: 0; }
+.catalogo-paneles button:not(.principal) { color: var(--texto); background: var(--superficie); border: 1px solid var(--taupe); border-radius: .4rem; padding: .35rem .65rem; }
+.catalogo-paneles button:disabled { opacity: .55; cursor: default; }
+.catalogo-paneles fieldset { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: .8rem; padding: 0; border: 0; }
+.catalogo-paneles form label { display: grid; align-content: start; gap: .25rem; }
+.catalogo-paneles form input { min-width: 0; padding: .45rem; color: var(--texto); border: 1px solid var(--taupe); border-radius: .4rem; }
+.catalogo-paneles .acciones-panel { grid-column: 1 / -1; }
+.catalogo-paneles input[type=radio] { accent-color: var(--violeta); }
+.catalogo-paneles :focus-visible { outline: 2px solid var(--violeta); outline-offset: 2px; }
