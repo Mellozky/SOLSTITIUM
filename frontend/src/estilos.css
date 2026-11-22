@@ -25,6 +25,10 @@ h2 { font-size: 1.125rem; }
 .cabecera { background: var(--superficie); border-bottom: 1px solid var(--borde); }
 .cabecera-contenido { min-height: 70px; display: flex; align-items: center; justify-content: space-between; gap: .5rem 1.5rem; flex-wrap: wrap; padding-block: .75rem; }
 .cabecera small { color: var(--texto-secundario); }
+.cabecera-lateral { display: flex; align-items: center; flex-wrap: wrap; gap: .25rem 1.25rem; }
+.enlace-administracion { color: var(--texto-secundario); font-size: .875rem; font-weight: 650; text-underline-offset: .2em; padding-block: .25rem; }
+.enlace-administracion:hover { color: var(--texto); }
+.enlace-administracion:focus-visible { outline: 2px solid var(--violeta); outline-offset: 3px; border-radius: .2rem; }
 .sol { color: var(--violeta); font-size: 1.35em; vertical-align: middle; }
 main { padding-block: 1.65rem 4rem; }
 .pasos { display: flex; flex-wrap: wrap; gap: .6rem 1.6rem; padding: 0; margin: 0 0 1.35rem; list-style: none; }

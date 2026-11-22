@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { solicitarJson } from './clienteApi.js';
 import { MensajeApi } from './MensajeApi.jsx';
 import { ContenidoAdministracion } from './ContenidoAdministracion.jsx';
+import { RUTA_SIMULADOR } from './accesoAdministracion.js';
 
 const inicio = '/admin/ingreso';
 const secciones = [
@@ -53,6 +54,7 @@ function Ingreso({ alIngresar }) {
         {error && <div className="aviso" role="alert"><MensajeApi error={error} /></div>}
         <button className="principal" disabled={enviando}>{enviando ? 'Ingresando…' : 'Ingresar'}</button>
         <small>Acceso solo para el equipo técnico.</small>
+        <a className="volver-simulador" href={RUTA_SIMULADOR}>Volver al simulador</a>
       </form>
     </main>
   );
@@ -116,7 +118,7 @@ export function Administracion({ ruta }) {
       <header className="cabecera-admin">
         <div className="contenedor cabecera-contenido">
           <strong><span className="sol" aria-hidden="true">☀</span> Administración</strong>
-          <div><span>{sesion.usuario}</span>
+          <div><a href={RUTA_SIMULADOR}>Volver al simulador</a> <span>{sesion.usuario}</span>
             <button type="button" onClick={cerrarSesion} disabled={cerrando}>Cerrar sesión</button>
           </div>
         </div>

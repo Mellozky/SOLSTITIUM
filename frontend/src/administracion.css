@@ -13,7 +13,13 @@
   color: var(--texto);
 }
 .ingreso-admin button { width: 100%; }
-.ingreso-admin form > small:last-child { display: block; text-align: center; margin-top: .65rem; }
+.ingreso-admin form > small:last-of-type { display: block; text-align: center; margin-top: .65rem; }
+.volver-simulador { display: block; width: fit-content; margin: .5rem auto 0; color: var(--violeta); font-size: .875rem; }
+.cabecera-admin a { margin-inline-end: .8rem; color: inherit; padding: .35rem; }
+.cabecera-admin a:focus-visible, .cabecera-admin button:focus-visible, .volver-simulador:focus-visible {
+  outline: 2px solid var(--violeta);
+  outline-offset: 2px;
+}
 .cabecera-admin button {
   margin-inline-start: .8rem;
   color: inherit;
