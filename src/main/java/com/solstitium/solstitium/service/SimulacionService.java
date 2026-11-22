@@ -2,6 +2,7 @@ package com.solstitium.solstitium.service;
 
 import com.solstitium.solstitium.model.dto.ConjuntoParametros;
 import com.solstitium.solstitium.model.dto.FactorSombra;
+import com.solstitium.solstitium.model.dto.ParametrosEntradaSimulacion;
 import com.solstitium.solstitium.model.dto.ResultadoConfiguracion;
 import com.solstitium.solstitium.model.dto.ResultadoSimulacion;
 import com.solstitium.solstitium.model.dto.SolicitudSimulacion;
@@ -29,6 +30,17 @@ public class SimulacionService {
     private final CalculadoraTecnica calculadoraTecnica;
     private final CalculadoraFinanciera calculadoraFinanciera;
     private final CalculadoraTarifa calculadoraTarifa;
+
+    public ParametrosEntradaSimulacion consultarParametrosEntrada() {
+        return validador.consultarParametrosEntrada(repositorio.obtenerParametros());
+    }
+
+    public BigDecimal calcularPromedioConsumo(List<BigDecimal> consumos) {
+        validador.validarConsumos(consumos, consultarParametrosEntrada());
+        SolicitudSimulacion solicitud = new SolicitudSimulacion();
+        solicitud.setConsumos(consumos);
+        return solicitud.consumoPromedio();
+    }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public ResultadoSimulacion simular(SolicitudSimulacion solicitud) {

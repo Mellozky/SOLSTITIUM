@@ -9,14 +9,14 @@ Equipo: Daniel Mendoza · Luis Hernández · Carlos Sandoval · Esteban Vidal
 
 - **Back-end** (raíz del repo): Java 21, Spring Boot 4.1, Maven, Spring Data JPA, Flyway, Spring Security.
 - **Base de datos:** PostgreSQL (solo parámetros, catálogo de paneles, administradores y bitácora; las simulaciones no se guardan).
-- **Front-end previsto** (carpeta `frontend/`): aplicación que consumirá la API REST en JSON; aún no está implementada.
+- **Front-end** (carpeta `frontend/`): React y Vite. Incluye los pasos Consumo y Vivienda y techo del simulador.
 - **Despliegue previsto:** Render (API) + Vercel (front-end).
 
 ## Estado al 20 de noviembre de 2026
 
-Están implementados persistencia, autenticación administrativa, entrada y validación, tarifa, sombra, dimensionamiento, generación, ahorro, recuperación, ROI, recomendación y escenario sin sombra. La API pública `POST /api/simulaciones` permite calcular sin registro. La administración permite consultar y actualizar parámetros existentes y consultar su bitácora con sesión y CSRF. La suite incluye 333 pruebas y una regresión de los once escenarios del ERS. Faltan la interfaz web, el CRUD administrativo de paneles, el despliegue y la aceptación final.
+Están implementados persistencia, autenticación administrativa, entrada y validación, tarifa, sombra, dimensionamiento, generación, ahorro, recuperación, ROI, recomendación y escenario sin sombra. La API pública `POST /api/simulaciones` permite calcular sin registro. La administración permite consultar y actualizar parámetros existentes y consultar su bitácora con sesión y CSRF. La suite incluye 333 pruebas y una regresión de los once escenarios del ERS. Falta completar la interfaz web, el CRUD administrativo de paneles, el despliegue y la aceptación final.
 
-El árbol siguiente muestra las capas implementadas; la interfaz web sigue pendiente.
+El árbol siguiente muestra las capas implementadas. El formulario web cubre los dos primeros pasos de la simulación.
 
 ## Patrón MVC
 
@@ -84,6 +84,16 @@ Invoke-RestMethod -Method Post -Uri 'http://localhost:8080/api/simulaciones' -Co
 
 La factura es opcional y se contrasta con el último mes, en orden cronológico. Errores de entrada devuelven 400; configuración o base no disponibles, 503; fallos inesperados, 500 con mensaje genérico. No se almacenan las simulaciones. Los contratos detallan redondeos, advertencias, ausencia de recuperación y salida sin espacio.
 
+Con la API iniciada en el puerto 8080, ejecuta el formulario local con Node.js 24:
+
+```powershell
+cd frontend
+npm ci
+npm run dev
+```
+
+Abre `http://localhost:5173`. Vite redirige las peticiones de `/api` a Spring Boot. En esa carpeta, `npm test` verifica la preparación de la entrada y `npm run build` genera la versión compilada.
+
 ## Migraciones y datos iniciales
 
 - **V1:** crea el tipo enumerado y las doce tablas (once entidades más `tramo_configuracion`).
@@ -117,7 +127,7 @@ Hay 337 pruebas de arranque, persistencia, configuración, autenticación, valid
 
 La instalación limpia y la actualización de V1.1 a V2 se verificaron previamente. La regresión actual comprueba los quince resultados de CP-01–CP-11 y los fallos HTTP sin información interna. Ver `docs/informe-pruebas-motor-simulacion.md` para tolerancias, el orden de los meses en CP-10 y lo pendiente. Esto no acredita aceptación del sistema completo desde navegador ni en producción.
 
-El job de interfaz del CI se omite sin `frontend/package-lock.json`; que salga verde no significa que exista o se haya probado el front-end.
+El job de interfaz del CI instala las dependencias con `frontend/package-lock.json` y compila el front-end.
 
 ## API administrativa de parámetros
 

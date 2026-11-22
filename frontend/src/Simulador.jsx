@@ -1,0 +1,104 @@
+import { useEffect, useRef, useState } from 'react';
+import { Consumo } from './Consumo.jsx';
+import { Vivienda } from './Vivienda.jsx';
+import { MAXIMO_MESES, prepararEntradaSimulacion } from './entrada.js';
+
+const pasos = ['Consumo', 'Vivienda y techo', 'Sombra', 'Resultados'];
+
+export function Simulador() {
+  const [meses, cambiarMeses] = useState(() => Array(MAXIMO_MESES).fill(''));
+  const [factura, cambiarFactura] = useState('');
+  const [parametros, cambiarParametros] = useState(null);
+  const [estadoCarga, cambiarEstadoCarga] = useState('cargando');
+  const [intento, cambiarIntento] = useState(0);
+  const [paso, cambiarPaso] = useState(0);
+  const [estrato, cambiarEstrato] = useState(null);
+  const [area, cambiarArea] = useState('');
+  const [entradaConsumo, cambiarEntradaConsumo] = useState(null);
+  const [entradaPreparada, cambiarEntradaPreparada] = useState(null);
+  const contenido = useRef(null);
+  const pasoAnterior = useRef(paso);
+
+  useEffect(() => {
+    const control = new AbortController();
+    fetch('/api/simulaciones/parametros-entrada', { signal: control.signal, cache: 'no-store' })
+      .then((respuesta) => {
+        if (!respuesta.ok) throw new Error();
+        return respuesta.json();
+      })
+      .then((datos) => {
+        cambiarParametros(datos);
+        cambiarEstadoCarga('lista');
+      })
+      .catch(() => {
+        if (!control.signal.aborted) cambiarEstadoCarga('error');
+      });
+    return () => control.abort();
+  }, [intento]);
+
+  useEffect(() => {
+    if (pasoAnterior.current !== paso) contenido.current.querySelector('h1').focus();
+    pasoAnterior.current = paso;
+  }, [paso]);
+
+  return (
+    <>
+      <header className="cabecera">
+        <div className="contenedor cabecera-contenido">
+          <strong><span className="sol" aria-hidden="true">☀</span> Simulador Solar Montería</strong>
+          <small>Estimación gratuita · sin registro · tus datos no se guardan</small>
+        </div>
+      </header>
+      <main className="contenedor" ref={contenido}>
+        <nav aria-label="Progreso de la simulación">
+          <ol className="pasos">
+            {pasos.map((nombre, indice) => (
+              <li key={nombre} aria-current={indice === paso ? 'step' : undefined}
+                className={indice < paso ? 'completado' : undefined}>
+                <span aria-hidden="true">{indice < paso ? '✓' : indice + 1}</span>{nombre}
+              </li>
+            ))}
+          </ol>
+        </nav>
+        {estadoCarga === 'error' && (
+          <div className="aviso" role="alert">
+            No pudimos cargar los parámetros de la simulación.
+            {' '}
+            <button type="button" onClick={() => {
+              cambiarEstadoCarga('cargando');
+              cambiarIntento(intento + 1);
+            }}>Reintentar</button>
+          </div>
+        )}
+        {paso === 0 && (
+          <Consumo meses={meses} factura={factura} cambiarMeses={cambiarMeses}
+            cambiarFactura={cambiarFactura} parametros={parametros} alContinuar={(datos) => {
+              cambiarEntradaConsumo(datos);
+              cambiarPaso(1);
+            }} />
+        )}
+        {paso === 1 && (
+          <Vivienda estrato={estrato} area={area} cambiarEstrato={cambiarEstrato} cambiarArea={cambiarArea}
+            parametros={parametros} alRegresar={() => cambiarPaso(0)} alContinuar={() => {
+              cambiarEntradaPreparada(prepararEntradaSimulacion(entradaConsumo, estrato, area));
+              cambiarPaso(2);
+            }} />
+        )}
+        {paso === 2 && entradaPreparada && <SombraPendiente alRegresar={() => cambiarPaso(1)} />}
+      </main>
+    </>
+  );
+}
+
+function SombraPendiente({ alRegresar }) {
+  return (
+    <section className="tarjeta">
+      <p className="etapa">Paso 3 de 3</p>
+      <h1 tabIndex={-1}>Sombra</h1>
+      <p>Este paso está en desarrollo. Puedes regresar para revisar tus datos de consumo y vivienda.</p>
+      <footer className="acciones acciones-navegacion">
+        <button type="button" className="regresar" onClick={alRegresar}>← Atrás</button>
+      </footer>
+    </section>
+  );
+}

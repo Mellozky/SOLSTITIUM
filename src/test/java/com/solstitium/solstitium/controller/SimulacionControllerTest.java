@@ -1,5 +1,6 @@
 package com.solstitium.solstitium.controller;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -37,6 +38,34 @@ class SimulacionControllerTest {
                 .andExpect(jsonPath("$.gastoMensualSinSistema").value(75000))
                 .andExpect(jsonPath("$.resultados[0].gastoMensualConSistema").value(0))
                 .andExpect(jsonPath("$.fechaTarifa").isNotEmpty());
+    }
+
+    @Test
+    void consultaParametrosDeEntradaSinSesion() throws Exception {
+        cliente.perform(get("/api/simulaciones/parametros-entrada"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.consumoMaximo").value(2000))
+                .andExpect(jsonPath("$.umbralAdvertenciaConsumo").value(800))
+                .andExpect(jsonPath("$.areaMinima").value(5))
+                .andExpect(jsonPath("$.areaMaxima").value(500))
+                .andExpect(jsonPath("$.estratos.length()").value(6))
+                .andExpect(jsonPath("$.estratos[0].tipoAjuste").value("SUBSIDIO"));
+    }
+
+    @Test
+    void calculaPromedioSinFacturaSombraNiSesion() throws Exception {
+        cliente.perform(post("/api/simulaciones/promedio-consumo").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"consumos\":[120,150]}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").value(135));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"[]", "[0]", "[null]", "[2001]"})
+    void rechazaConsumosInvalidosEnElPromedio(String consumos) throws Exception {
+        cliente.perform(post("/api/simulaciones/promedio-consumo").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"consumos\":" + consumos + "}"))
+                .andExpect(status().isBadRequest());
     }
 
     @ParameterizedTest

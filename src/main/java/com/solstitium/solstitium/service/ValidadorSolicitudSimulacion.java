@@ -2,6 +2,8 @@ package com.solstitium.solstitium.service;
 
 import com.solstitium.solstitium.exception.DatosSimulacionInvalidosException;
 import com.solstitium.solstitium.model.dto.ConjuntoParametros;
+import com.solstitium.solstitium.model.dto.ParametrosEntradaSimulacion;
+import com.solstitium.solstitium.model.dto.ParametrosEntradaSimulacion.EstratoDisponible;
 import com.solstitium.solstitium.model.dto.SolicitudSimulacion;
 import com.solstitium.solstitium.service.calculo.CalculadoraTarifa;
 import jakarta.validation.Validator;
@@ -40,8 +42,10 @@ public class ValidadorSolicitudSimulacion {
 
         List<String> errores = new ArrayList<>();
         List<String> advertencias = new ArrayList<>();
-        validarConsumosYArea(solicitud, conjunto, errores, advertencias);
-        if (conjunto.getEstratos().stream().noneMatch(estrato -> estrato.getNumero() == solicitud.getEstrato())) {
+        ParametrosEntradaSimulacion parametros = consultarParametrosEntrada(conjunto);
+        revisarConsumos(solicitud.getConsumos(), parametros, errores, advertencias);
+        validarArea(solicitud.getAreaLibre(), parametros, errores);
+        if (parametros.estratos().stream().noneMatch(estrato -> estrato.numero() == solicitud.getEstrato())) {
             errores.add("El estrato seleccionado no está disponible en la configuración.");
         }
         validarSombra(solicitud, conjunto, errores);
@@ -50,27 +54,48 @@ public class ValidadorSolicitudSimulacion {
         return List.copyOf(advertencias);
     }
 
-    private void validarConsumosYArea(SolicitudSimulacion solicitud, ConjuntoParametros conjunto,
-                                     List<String> errores, List<String> advertencias) {
+    ParametrosEntradaSimulacion consultarParametrosEntrada(ConjuntoParametros conjunto) {
         BigDecimal maximo = parametro(conjunto, "consumo_maximo");
         BigDecimal umbral = parametro(conjunto, "umbral_advertencia_consumo");
+        if (maximo.signum() <= 0 || umbral.signum() < 0 || umbral.compareTo(maximo) > 0) {
+            throw new IllegalStateException("Los límites de consumo no son coherentes.");
+        }
         BigDecimal areaMinima = parametro(conjunto, "area_minima");
         BigDecimal areaMaxima = parametro(conjunto, "area_maxima");
-        if (maximo.signum() <= 0 || umbral.signum() < 0 || umbral.compareTo(maximo) > 0
-                || areaMinima.signum() <= 0 || areaMinima.compareTo(areaMaxima) > 0) {
-            throw new IllegalStateException("Los límites de consumo o área no son coherentes.");
+        if (areaMinima.signum() <= 0 || areaMinima.compareTo(areaMaxima) > 0) {
+            throw new IllegalStateException("Los límites de área no son coherentes.");
         }
-        for (int indice = 0; indice < solicitud.getConsumos().size(); indice++) {
-            BigDecimal consumo = solicitud.getConsumos().get(indice);
-            if (consumo.compareTo(maximo) > 0) {
-                errores.add("El consumo del mes " + (indice + 1) + " supera el máximo de " + maximo.toPlainString() + " kWh.");
-            } else if (consumo.compareTo(umbral) > 0) {
+        var estratos = conjunto.getEstratos().stream()
+                .map(estrato -> new EstratoDisponible(
+                        estrato.getNumero(), estrato.getTipoAjuste().name(), estrato.getPorcentajeAjuste()))
+                .toList();
+        return new ParametrosEntradaSimulacion(maximo, umbral, areaMinima, areaMaxima,
+                parametro(conjunto, "consumo_subsistencia"), estratos);
+    }
+
+    void validarConsumos(List<BigDecimal> consumos, ParametrosEntradaSimulacion parametros) {
+        List<String> errores = new ArrayList<>();
+        revisarConsumos(consumos, parametros, errores, new ArrayList<>());
+        rechazarSiHayErrores(errores);
+    }
+
+    private void revisarConsumos(List<BigDecimal> consumos, ParametrosEntradaSimulacion parametros,
+                                 List<String> errores, List<String> advertencias) {
+        for (int indice = 0; indice < consumos.size(); indice++) {
+            BigDecimal consumo = consumos.get(indice);
+            if (consumo.compareTo(parametros.consumoMaximo()) > 0) {
+                errores.add("El consumo del mes " + (indice + 1) + " supera el máximo de "
+                        + parametros.consumoMaximo().toPlainString() + " kWh.");
+            } else if (consumo.compareTo(parametros.umbralAdvertenciaConsumo()) > 0) {
                 advertencias.add("Consumo poco común en el mes " + (indice + 1) + ": revise el valor ingresado.");
             }
         }
-        if (solicitud.getAreaLibre().compareTo(areaMinima) < 0 || solicitud.getAreaLibre().compareTo(areaMaxima) > 0) {
-            errores.add("El área libre debe estar entre " + areaMinima.toPlainString()
-                    + " y " + areaMaxima.toPlainString() + " m².");
+    }
+
+    private void validarArea(BigDecimal area, ParametrosEntradaSimulacion parametros, List<String> errores) {
+        if (area.compareTo(parametros.areaMinima()) < 0 || area.compareTo(parametros.areaMaxima()) > 0) {
+            errores.add("El área libre debe estar entre " + parametros.areaMinima().toPlainString()
+                    + " y " + parametros.areaMaxima().toPlainString() + " m².");
         }
     }
 
