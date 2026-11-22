@@ -1,3 +1,4 @@
+import { CatalogoPaneles } from './CatalogoPaneles.jsx';
 import { useEffect, useState } from 'react';
 import { solicitarJson } from './clienteApi.js';
 import { MensajeApi } from './MensajeApi.jsx';
@@ -99,12 +100,6 @@ function Tarifas({ datos, bitacora }) {
   </>;
 }
 
-function Paneles({ paneles }) {
-  return <Tabla titulo="Paneles registrados" columnas={['Referencia', 'Marca', 'Modelo', 'Potencia', 'Área', 'Estado']}
-    filas={paneles.map((panel) => [panel.id, panel.esReferencia ? 'Referencia' : '—', panel.marca, panel.modelo,
-      `${presentar(panel.potenciaWp)} Wp`, `${presentar(panel.areaM2)} m²`, panel.activo ? 'Activo' : 'Inactivo'])} />;
-}
-
 function OtrosParametros({ datos, seccion }) {
   if (seccion === 'limites' || seccion === 'tecnicos') {
     return <ParametrosGenerales datos={datos} titulo={seccion === 'limites' ? 'Límites operativos' : 'Valores técnicos'} />;
@@ -157,7 +152,7 @@ export function ContenidoAdministracion({ seccion }) {
   if (!respuesta) return <p role="status">Cargando…</p>;
   const { datos, historial } = respuesta;
   if (seccion === 'tarifas') return <Tarifas datos={datos} bitacora={historial} />;
-  if (seccion === 'paneles') return <Paneles paneles={datos.paneles} />;
+  if (seccion === 'paneles') return <CatalogoPaneles inicial={datos} />;
   if (seccion === 'bitacora') return <Bitacora registros={datos} />;
   return <OtrosParametros datos={datos} seccion={seccion} />;
 }
