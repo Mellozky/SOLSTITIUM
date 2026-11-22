@@ -7,6 +7,7 @@ import { MAXIMO_MESES, prepararEntradaSimulacion } from './entrada.js';
 import { usarRutaSimulacion } from './rutasSimulacion.js';
 import { solicitarJson } from './clienteApi.js';
 import { MensajeApi } from './MensajeApi.jsx';
+import { debeConfirmarSalida, RUTA_ADMINISTRACION } from './accesoAdministracion.js';
 
 const pasos = ['Consumo', 'Vivienda y techo', 'Sombra', 'Resultados'];
 
@@ -76,7 +77,13 @@ export function Simulador() {
       <header className="cabecera">
         <div className="contenedor cabecera-contenido">
           <strong><span className="sol" aria-hidden="true">☀</span> Simulador Solar Montería</strong>
-          <small>Estimación gratuita · sin registro · tus datos no se guardan</small>
+          <div className="cabecera-lateral">
+            <small>Estimación gratuita · sin registro · tus datos no se guardan</small>
+            <a className="enlace-administracion" href={RUTA_ADMINISTRACION} onClick={(evento) => {
+              const datos = { meses, factura, estrato, area, seleccionesSombra };
+              if (!debeConfirmarSalida(datos, (mensaje) => window.confirm(mensaje))) evento.preventDefault();
+            }}>Administración</a>
+          </div>
         </div>
       </header>
       <main className="contenedor" ref={contenido}>

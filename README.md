@@ -112,6 +112,12 @@ npm run dev
 
 Abre `http://localhost:5173`. Vite redirige las peticiones de `/api` a Spring Boot. En esa carpeta, `npm test` verifica la preparación de la entrada y `npm run build` genera la versión compilada.
 
+### Acceso a la administración
+
+Residentes y administradores usan la misma dirección. El enlace «Administración» de la cabecera del simulador lleva a `/admin`, que muestra el inicio de sesión si no hay una sesión activa. Si el residente ya ingresó datos, se pide confirmación antes de salir, porque las simulaciones no se guardan. La pantalla de ingreso y la cabecera de administración tienen «Volver al simulador». Para ingresar hace falta un administrador creado con el script de «Crear un administrador».
+
+Por ahora el front-end se sirve con Vite (`npm run dev`); Spring Boot no lo empaqueta. El enlace en la cabecera es un cambio al prototipo autorizado por Daniel el 22 de noviembre de 2026.
+
 ## Migraciones y datos iniciales
 
 - **V1:** crea el tipo enumerado y las doce tablas (once entidades más `tramo_configuracion`).
