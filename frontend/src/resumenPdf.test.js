@@ -51,3 +51,11 @@ test('sin espacio: omite todos los indicadores financieros', () => {
     assert.ok(!pdf.includes(ausente), `no debería incluir ${ausente}`);
   }
 });
+
+test('advierte que los parámetros son supuestos de prueba, salvo que se desactive', () => {
+  const conAviso = crearDocumento(conRecomendacion, jsPDF, fecha, { avisoDatosPrueba: true }).output();
+  const sinAviso = crearDocumento(conRecomendacion, jsPDF, fecha, { avisoDatosPrueba: false }).output();
+
+  assert.match(conAviso, /de demostraci/);
+  assert.doesNotMatch(sinAviso, /de demostraci/);
+});

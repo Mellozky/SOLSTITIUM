@@ -1,6 +1,7 @@
 // CU-05: el navegador genera y descarga el resumen en PDF con los mismos datos de la pantalla.
 // No hay cálculos aquí: el contenido sale de prepararResultados, igual que la vista de resultados.
 import { prepararResultados } from './resultados.js';
+import { MOSTRAR_AVISO_DATOS_PRUEBA, TEXTO_AVISO_DATOS_PRUEBA, TITULO_AVISO_DATOS_PRUEBA } from './avisoDatosPrueba.js';
 
 const MARGEN = 18;
 const PUNTO_A_MM = 0.3528;
@@ -145,7 +146,8 @@ function pieDePagina(doc, escritor, generado) {
 }
 
 /** Arma el documento con jsPDF. Recibe la clase para poder probarlo sin navegador. */
-export function crearDocumento(resultado, JsPDF, fecha = new Date()) {
+export function crearDocumento(resultado, JsPDF, fecha = new Date(),
+  { avisoDatosPrueba = MOSTRAR_AVISO_DATOS_PRUEBA } = {}) {
   const vista = prepararResultados(resultado);
   const doc = new JsPDF({ unit: 'mm', format: 'letter' });
   const escritor = crearEscritor(doc);
@@ -190,6 +192,9 @@ export function crearDocumento(resultado, JsPDF, fecha = new Date()) {
   seccion(escritor, 'Aviso');
   escritor.texto('Esta es una estimación y no una cotización. No incluye venta de excedentes, '
     + 'degradación de los paneles ni costo de financiación.', { tamano: 10 });
+  if (avisoDatosPrueba) {
+    escritor.texto(`${TITULO_AVISO_DATOS_PRUEBA}. ${TEXTO_AVISO_DATOS_PRUEBA}`, { tamano: 10, negrita: true });
+  }
 
   pieDePagina(doc, escritor, formatoGeneracion.format(fecha));
   return doc;

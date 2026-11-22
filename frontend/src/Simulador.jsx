@@ -7,6 +7,7 @@ import { MAXIMO_MESES, prepararEntradaSimulacion } from './entrada.js';
 import { usarRutaSimulacion } from './rutasSimulacion.js';
 import { solicitarJson } from './clienteApi.js';
 import { MensajeApi } from './MensajeApi.jsx';
+import { MOSTRAR_AVISO_DATOS_PRUEBA, TEXTO_AVISO_DATOS_PRUEBA, TITULO_AVISO_DATOS_PRUEBA } from './avisoDatosPrueba.js';
 import { debeConfirmarSalida, RUTA_ADMINISTRACION } from './accesoAdministracion.js';
 
 const pasos = ['Consumo', 'Vivienda y techo', 'Sombra', 'Resultados'];
@@ -86,6 +87,11 @@ export function Simulador() {
           </div>
         </div>
       </header>
+      {MOSTRAR_AVISO_DATOS_PRUEBA && (
+        <aside className="aviso-demostracion" aria-label={TITULO_AVISO_DATOS_PRUEBA}>
+          <p className="contenedor"><strong>{TITULO_AVISO_DATOS_PRUEBA}.</strong> {TEXTO_AVISO_DATOS_PRUEBA}</p>
+        </aside>
+      )}
       <main className="contenedor" ref={contenido}>
         <nav aria-label="Progreso de la simulación">
           <ol className="pasos">
